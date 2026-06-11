@@ -59,28 +59,32 @@ function analogyVector(a, b, c) {
 }
 function analogy(a, b, c, k) { return nearestToVector(analogyVector(a, b, c), k, [a, b, c]); }
 
-/* PCA -> 2D via power iteration. points: array of Float32Array(DIM).
-   Returns {project(x)->[u,v]} fitted (mean + top-2 components). */
-function fitPCA(points) {
-  const n = points.length, mean = new Float64Array(DIM);
+/* PCA helpers (power iteration, deterministic seed) */
+function normV(v) { let s = 0; for (let i = 0; i < DIM; i++) s += v[i] * v[i]; s = Math.sqrt(s) || 1; for (let i = 0; i < DIM; i++) v[i] /= s; }
+function powerPC(rows) {
+  let w = new Float64Array(DIM);
+  for (let i = 0; i < DIM; i++) w[i] = Math.sin(i * 1.7 + 0.5); // deterministic seed
+  normV(w);
+  for (let it = 0; it < 40; it++) {
+    const acc = new Float64Array(DIM);
+    for (const r of rows) { let pr = 0; for (let i = 0; i < DIM; i++) pr += r[i] * w[i]; for (let i = 0; i < DIM; i++) acc[i] += pr * r[i]; }
+    normV(acc); w = acc;
+  }
+  return w;
+}
+function centered(points, mean) {
+  return points.map(p => { const r = new Float64Array(DIM); for (let i = 0; i < DIM; i++) r[i] = p[i] - mean[i]; return r; });
+}
+function meanOf(points) {
+  const mean = new Float64Array(DIM);
   for (const p of points) for (let i = 0; i < DIM; i++) mean[i] += p[i];
-  for (let i = 0; i < DIM; i++) mean[i] /= n;
-  const C = points.map(p => { const r = new Float64Array(DIM); for (let i = 0; i < DIM; i++) r[i] = p[i] - mean[i]; return r; });
-  const powerPC = (rows) => {
-    let w = new Float64Array(DIM);
-    for (let i = 0; i < DIM; i++) w[i] = Math.sin(i * 1.7 + 0.5); // deterministic seed
-    norm(w);
-    for (let it = 0; it < 40; it++) {
-      const acc = new Float64Array(DIM);
-      for (const r of rows) { let pr = 0; for (let i = 0; i < DIM; i++) pr += r[i] * w[i]; for (let i = 0; i < DIM; i++) acc[i] += pr * r[i]; }
-      norm(acc); w = acc;
-    }
-    return w;
-  };
-  function norm(v) { let s = 0; for (let i = 0; i < DIM; i++) s += v[i] * v[i]; s = Math.sqrt(s) || 1; for (let i = 0; i < DIM; i++) v[i] /= s; }
-  const w1 = powerPC(C);
-  const C2 = C.map(r => { let pr = 0; for (let i = 0; i < DIM; i++) pr += r[i] * w1[i]; const o = new Float64Array(DIM); for (let i = 0; i < DIM; i++) o[i] = r[i] - pr * w1[i]; return o; });
-  const w2 = powerPC(C2);
+  for (let i = 0; i < DIM; i++) mean[i] /= points.length;
+  return mean;
+}
+function removeComponent(rows, w) {
+  return rows.map(r => { let pr = 0; for (let i = 0; i < DIM; i++) pr += r[i] * w[i]; const o = new Float64Array(DIM); for (let i = 0; i < DIM; i++) o[i] = r[i] - pr * w[i]; return o; });
+}
+function makeProjector(mean, w1, w2) {
   return {
     project(x) {
       let u = 0, v = 0;
@@ -88,6 +92,30 @@ function fitPCA(points) {
       return [u, v];
     }
   };
+}
+
+/* PCA -> 2D. points: array of Float32Array(DIM).
+   Returns {project(x)->[u,v]} fitted (mean + top-2 components). */
+function fitPCA(points) {
+  const mean = meanOf(points);
+  const C = centered(points, mean);
+  const w1 = powerPC(C);
+  const w2 = powerPC(removeComponent(C, w1));
+  return makeProjector(mean, w1, w2);
+}
+
+/* 2D basis for the analogy picture. The x-axis IS the (a−b) difference
+   direction, so the two "same vector" arrows render exactly parallel and
+   equal-length — the parallelogram is real geometry, not styling. The y-axis
+   is the top principal component of the words once that direction is removed.
+   Orthonormal + linear, so in-plane lengths/angles are the actual geometry. */
+function fitAnalogyPlane(points, diffDir) {
+  const e1 = new Float64Array(DIM);
+  for (let i = 0; i < DIM; i++) e1[i] = diffDir[i];
+  normV(e1);
+  const mean = meanOf(points);
+  const e2 = powerPC(removeComponent(centered(points, mean), e1));
+  return makeProjector(mean, e1, e2);
 }
 
 /* label declutter: estimate label boxes, push overlapping pairs apart.
@@ -478,81 +506,113 @@ const ModeB = {
     const box = $("#B-pca"); this.clearPCA();
     const staticNote = box.querySelector(".pca-note:not(.gx)"); if (staticNote) staticNote.style.display = "";
     const rect = box.getBoundingClientRect();
-    const W = rect.width, H = rect.height, pad = 64;
-    const va = vec(a), vb = vec(b), vc = vec(c), d = analogyVector(a, b, c);
-    const amb = new Float32Array(DIM); for (let i = 0; i < DIM; i++) amb[i] = va[i] - vb[i]; // a-b waypoint
+    const W = rect.width, H = rect.height, pad = 70;
+    const va = vec(a), vb = vec(b), vc = vec(c);
+    // raw a−b+c (NOT normalized): keeps target−c === a−b, the parallelogram
+    const diff = new Float32Array(DIM), d = new Float32Array(DIM);
+    for (let i = 0; i < DIM; i++) { diff[i] = va[i] - vb[i]; d[i] = diff[i] + vc[i]; }
     const result = top[0][0];
     const labeled = [
       { w: a, v: va, role: "in" }, { w: b, v: vb, role: "in" }, { w: c, v: vc, role: "in" },
-      { w: "(" + a + "−" + b + ")", v: amb, role: "way" },
       { w: result, v: vec(result), role: "result" },
     ];
     top.slice(1).forEach(r => labeled.push({ w: r[0], v: vec(r[0]), role: "alt" }));
-    const fit = fitPCA([va, vb, vc, amb, d, ...top.map(r => vec(r[0]))]);
+    const fit = fitAnalogyPlane([va, vb, vc, d, ...top.map(r => vec(r[0]))], diff);
     const pts = labeled.map(o => ({ ...o, p: fit.project(o.v) }));
     const dPt = fit.project(d);
+    // one uniform scale for both axes — parallel stays parallel, equal stays equal
     const all = [...pts.map(p => p.p), dPt];
     const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const sx = v => pad + (v - minX) / (maxX - minX || 1) * (W - 2 * pad);
-    const sy = v => H - (pad + (v - minY) / (maxY - minY || 1) * (H - 2 * pad));
+    const s = Math.min((W - 2 * pad) / (maxX - minX || 1), (H - 2 * pad) / (maxY - minY || 1));
+    const sx = v => W / 2 + (v - (minX + maxX) / 2) * s;
+    const sy = v => H / 2 - (v - (minY + maxY) / 2) * s;
 
-    // estimate label boxes and push overlaps apart; the result and waypoint
-    // anchor the arithmetic so they stay put, alternatives move freely
-    const sizeFor = o => o.role === "result" ? 22 : o.role === "alt" ? 13 : o.role === "way" ? 11 : 17;
+    // the math is pinned: inputs, result, and the ✕ never move. Only the
+    // faint alternatives get decluttered, flowing around the anchors.
+    const sizeFor = o => o.role === "result" ? 22 : o.role === "alt" ? 13 : 17;
     const boxes = pts.map(o => {
       const fs = sizeFor(o);
-      return { o, x: sx(o.p[0]), y: sy(o.p[1]),
-               w: o.role === "way" ? 8 : textWidth(o.w, fs) + 26, h: fs + 10,
-               weight: o.role === "result" ? 0.1 : o.role === "way" ? 0 : o.role === "in" ? (o.w === a ? 0.3 : 0.7) : 1 };
+      return { o, x: sx(o.p[0]), y: sy(o.p[1]), w: textWidth(o.w, fs) + 26, h: fs + 10,
+               weight: o.role === "alt" ? 1 : 0 };
     });
-    const obstacles = [];
+    const tx = sx(dPt[0]), ty = sy(dPt[1]);
+    const obstacles = [{ x: tx, y: ty, w: 24, h: 24, weight: 0 }];
     if (staticNote && staticNote.style.display !== "none") {
       const nr = staticNote.getBoundingClientRect();
       obstacles.push({ x: nr.left - rect.left + nr.width / 2, y: nr.top - rect.top + nr.height / 2, w: nr.width, h: nr.height, weight: 0 });
     }
     declutter([...boxes, ...obstacles], { x0: 6, y0: 8, x1: W - 6, y1: H - 8 });
-    boxes.forEach(bx => { bx.o.x = bx.x; bx.o.y = bx.y; });
+    boxes.forEach(bx => { bx.o.x = bx.x; bx.o.y = bx.y; bx.o.bw = bx.w; bx.o.bh = bx.h; });
+
+    // pull line endpoints out of the label boxes so arrows touch, not strike
+    const trimLine = (p1, b1, p2, b2) => {
+      const dx = p2[0] - p1[0], dy = p2[1] - p1[1], len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      const edge = bx => bx ? Math.min(ux ? Math.abs(bx.w / 2 / ux) : 1e9, uy ? Math.abs(bx.h / 2 / uy) : 1e9) : 0;
+      const m = len / 2 - 4;
+      const t1 = Math.min(edge(b1) + 3, m), t2 = Math.min(edge(b2) + 3, m);
+      return [[p1[0] + ux * t1, p1[1] + uy * t1], [p2[0] - ux * t2, p2[1] - uy * t2]];
+    };
+    const boxOf = o => ({ w: o.bw, h: o.bh });
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "pca-svg"); svg.style.position = "absolute"; svg.style.inset = "0"; svg.style.width = "100%"; svg.style.height = "100%"; svg.style.pointerEvents = "none";
     svg.innerHTML = `<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--ink-soft)"/></marker></defs>`;
     box.append(svg);
     const find = w => pts.find(p => p.w === w);
-    const ia = find(a), iway = find("(" + a + "−" + b + ")");
-    this.arrow(svg, [ia.x, ia.y], [iway.x, iway.y], "− " + b);
-    this.arrow(svg, [iway.x, iway.y], [sx(dPt[0]), sy(dPt[1])], "+ " + c);
+    const ia = find(a), ib = find(b), ic = find(c), ir = find(result);
+    // the same difference vector, drawn twice: b→a, then c→? — the analogy
+    const [q1, q2] = trimLine([ib.x, ib.y], boxOf(ib), [ia.x, ia.y], boxOf(ia));
+    this.arrow(svg, q1, q2, `${b} → ${a}`, 250);
+    const [q3, q4] = trimLine([ic.x, ic.y], boxOf(ic), [tx, ty], { w: 26, h: 26 });
+    this.arrow(svg, q3, q4, `${c} → ?`, 900);
+    // ✕ where the math lands, then a dotted hop to the nearest real word
+    const cross = document.createElementNS(svg.namespaceURI, "text");
+    cross.setAttribute("x", tx); cross.setAttribute("y", ty); cross.setAttribute("text-anchor", "middle"); cross.setAttribute("dominant-baseline", "central");
+    cross.setAttribute("font-size", "16"); cross.setAttribute("fill", "var(--ink)"); cross.textContent = "✕";
+    cross.style.opacity = "0"; cross.style.transition = "opacity .35s";
+    svg.append(cross);
+    setTimeout(() => { cross.style.opacity = "1"; }, 1500);
+    const [s1, s2] = trimLine([tx, ty], { w: 20, h: 20 }, [ir.x, ir.y], boxOf(ir));
+    const snap = document.createElementNS(svg.namespaceURI, "line");
+    snap.setAttribute("x1", s1[0]); snap.setAttribute("y1", s1[1]); snap.setAttribute("x2", s2[0]); snap.setAttribute("y2", s2[1]);
+    snap.setAttribute("stroke", "var(--ink-faint)"); snap.setAttribute("stroke-width", "1.5"); snap.setAttribute("stroke-dasharray", "3 4");
+    snap.style.opacity = "0"; snap.style.transition = "opacity .35s";
+    svg.append(snap);
+    setTimeout(() => { snap.style.opacity = "1"; }, 1650);
 
+    const delayFor = o => o.role === "in" ? 0 : o.role === "result" ? 1650 : 1900;
     pts.forEach(o => {
       const node = el("div", "pca-node serif"); node.style.position = "absolute";
       node.style.left = o.x + "px"; node.style.top = o.y + "px"; node.style.transform = "translate(-50%,-50%)";
       node.style.transition = "opacity .5s, left .5s, top .5s"; node.style.padding = "1px 5px"; node.style.borderRadius = "6px"; node.style.whiteSpace = "nowrap";
       if (o.role === "result") { node.style.fontSize = "22px"; node.style.fontWeight = "600"; node.style.color = $("#B-pca").dataset.bias === "1" ? "var(--c5-d)" : "var(--c1-d)"; node.style.background = "rgba(255,255,255,.7)"; node.textContent = o.w; }
       else if (o.role === "alt") { node.style.fontSize = "13px"; node.style.color = "var(--ink-faint)"; node.textContent = o.w; }
-      else if (o.role === "way") { node.style.fontSize = "11px"; node.style.color = "var(--ink-faint)"; node.style.fontStyle = "italic"; node.textContent = ""; const dotw = el("span"); dotw.textContent = "•"; node.append(dotw); }
       else { node.style.fontSize = "17px"; node.style.color = clusterVar(o.w, "d"); node.textContent = o.w; }
-      // inline marker dot, sitting with the word instead of floating above it
-      if (o.role !== "way") {
-        const dot = el("span");
-        dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:${o.role === "result" ? 3 : 2}px;background:${o.role === "result" ? "var(--c1-d)" : o.role === "in" ? clusterVar(o.w, "d") : "var(--ink-faint)"}`;
-        node.prepend(dot);
-      }
+      const dot = el("span");
+      dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:${o.role === "result" ? 3 : 2}px;background:${o.role === "result" ? "var(--c1-d)" : o.role === "in" ? clusterVar(o.w, "d") : "var(--ink-faint)"}`;
+      node.prepend(dot);
       box.append(node);
-      requestAnimationFrame(() => { node.style.opacity = "1"; });
       node.style.opacity = "0";
+      setTimeout(() => { node.style.opacity = "1"; }, delayFor(o));
     });
   },
-  arrow(svg, p1, p2, label) {
+  arrow(svg, p1, p2, label, delay) {
     const line = document.createElementNS(svg.namespaceURI, "line");
     line.setAttribute("x1", p1[0]); line.setAttribute("y1", p1[1]); line.setAttribute("x2", p2[0]); line.setAttribute("y2", p2[1]);
-    line.setAttribute("stroke", "var(--ink-soft)"); line.setAttribute("stroke-width", "2"); line.setAttribute("marker-end", "url(#ah)"); line.setAttribute("stroke-dasharray", "1000"); line.setAttribute("stroke-dashoffset", "1000");
-    svg.append(line);
+    line.setAttribute("stroke", "var(--ink-soft)"); line.setAttribute("stroke-width", "2"); line.setAttribute("marker-end", "url(#ah)");
     const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
-    line.style.transition = "stroke-dashoffset .6s ease"; line.setAttribute("stroke-dasharray", len); requestAnimationFrame(() => line.setAttribute("stroke-dashoffset", "0"));
+    line.setAttribute("stroke-dasharray", len); line.setAttribute("stroke-dashoffset", len);
+    line.style.transition = "stroke-dashoffset .55s ease";
+    svg.append(line);
+    setTimeout(() => line.setAttribute("stroke-dashoffset", "0"), delay || 0);
     const t = document.createElementNS(svg.namespaceURI, "text");
-    t.setAttribute("x", (p1[0] + p2[0]) / 2); t.setAttribute("y", (p1[1] + p2[1]) / 2 - 7);
+    t.setAttribute("x", (p1[0] + p2[0]) / 2); t.setAttribute("y", (p1[1] + p2[1]) / 2 - 9);
     t.setAttribute("fill", "var(--ink-soft)"); t.setAttribute("font-size", "13"); t.setAttribute("font-family", "Georgia,serif"); t.setAttribute("text-anchor", "middle"); t.textContent = label;
+    t.style.opacity = "0"; t.style.transition = "opacity .4s";
     svg.append(t);
+    setTimeout(() => { t.style.opacity = "1"; }, (delay || 0) + 250);
   },
 };
 
