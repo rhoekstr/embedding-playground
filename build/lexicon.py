@@ -50,6 +50,9 @@ CLUSTERS = {
         # common adjectives (for grammar/morphology analogies)
         "big", "small", "bigger", "smaller", "good", "bad", "fast", "slow",
         "old", "young", "new", "large",
+        # 2026-06-11 relationship-mining additions (true-neighbor stitch words)
+        "biking", "bright", "dark", "flour", "butter", "huge", "pace", "quiet",
+        "shoulder",
     ],
     # ------------------------------------------------------------------ c2
     "c2_kinship": [
@@ -63,6 +66,8 @@ CLUSTERS = {
         "toddler", "youth", "senior", "widow", "bride", "groom", "twin",
         "heir", "lord", "ruler", "citizen", "kid", "grandson", "granddaughter",
         "spouse", "ancestor", "generation",
+        # 2026-06-11 relationship-mining additions
+        "newborn",
     ],
     # ------------------------------------------------------------------ c3
     "c3_geography": [
@@ -79,6 +84,8 @@ CLUSTERS = {
         # regions / geography-generic
         "europe", "asia", "africa", "america", "continent", "nation",
         "country", "city", "capital", "region", "border",
+        # 2026-06-11 relationship-mining additions (capital/country pairs kept whole)
+        "prague", "belgium", "brussels", "hungary", "budapest",
     ],
     # ------------------------------------------------------------------ c4
     # [REVIEW: Robert] Performance-management + DOL vocabulary.
@@ -113,6 +120,10 @@ CLUSTERS = {
         "procurement", "eligibility", "applicant", "beneficiary", "claimant",
         "disability", "veteran", "minimum", "overtime", "union", "bargaining",
         "sector", "industry", "economy",
+        # 2026-06-11 relationship-mining additions
+        "government", "transparency", "implementation", "yearly", "assess",
+        "index", "percent", "pay", "spending", "investment", "deputy",
+        "legislation", "provision", "factory", "production",
     ],
     # ------------------------------------------------------------------ c5
     # [REVIEW: Robert] Bias-demonstration set. No slurs, no named ethnicities or
@@ -134,6 +145,9 @@ CLUSTERS = {
         "assertive", "bossy", "sensitive", "logical", "caring", "dominant",
         "submissive", "independent", "beautiful", "handsome", "pretty",
         "tough",
+        # 2026-06-11 relationship-mining additions — REVIEW: bias cluster is hand-curated
+        "assistant", "bookkeeper", "housekeeper", "waitress", "pharmacist",
+        "bartender", "welder", "chief", "charming", "businessman", "businesswoman",
     ],
     # ------------------------------------------------------------------ c6
     "c6_polysemy": [
@@ -141,6 +155,8 @@ CLUSTERS = {
         "mine", "bark", "club", "court", "date", "match", "palm", "pitch",
         "pound", "ring", "scale", "seal", "sink", "spell", "star", "tie",
         "watch", "wave", "well", "yard", "novel", "mint",
+        # 2026-06-11 relationship-mining additions
+        "reasonable", "bill",
     ],
 }
 
