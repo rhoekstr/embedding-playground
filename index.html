@@ -272,6 +272,8 @@ footer.chrome b{color:var(--ink-soft);font-weight:600}
 .true-row{display:flex;gap:9px;align-items:baseline;padding:5px 9px;border-radius:7px;color:var(--ink-soft)}
 .true-row .rank{font-variant-numeric:tabular-nums;font-size:11px;color:var(--ink-faint);width:18px}
 .true-row .tw{font-family:var(--serif);font-size:14.5px;color:var(--ink-soft)}
+.true-row button.tw-link{background:none;border:none;padding:0;cursor:pointer;text-align:left}
+.true-row button.tw-link:hover,.true-row button.tw-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 .node{position:absolute;font-family:var(--serif);transition:left .6s cubic-bezier(.4,0,.2,1),top .6s cubic-bezier(.4,0,.2,1),opacity .4s,transform .15s;transform:translate(-50%,-50%);cursor:pointer;white-space:nowrap;padding:2px 6px;border-radius:7px}
 .node:hover{transform:translate(-50%,-50%) scale(1.12);z-index:6}
 .node.center{font-size:30px;font-weight:600;cursor:default}
@@ -402,7 +404,7 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
         </div>
         <div class="C-side">
           <h4>Real nearest neighbors</h4>
-          <div class="ctx-note">from the full 400K-word space — context, not interactive</div>
+          <div class="ctx-note">from the full 400K-word space. Colored words are in this tool’s 492 — click to walk there; gray ones aren’t shipped.</div>
           <div class="true-list" id="C-true"></div>
         </div>
       </div>

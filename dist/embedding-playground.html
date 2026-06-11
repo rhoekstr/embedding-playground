@@ -272,6 +272,8 @@ footer.chrome b{color:var(--ink-soft);font-weight:600}
 .true-row{display:flex;gap:9px;align-items:baseline;padding:5px 9px;border-radius:7px;color:var(--ink-soft)}
 .true-row .rank{font-variant-numeric:tabular-nums;font-size:11px;color:var(--ink-faint);width:18px}
 .true-row .tw{font-family:var(--serif);font-size:14.5px;color:var(--ink-soft)}
+.true-row button.tw-link{background:none;border:none;padding:0;cursor:pointer;text-align:left}
+.true-row button.tw-link:hover,.true-row button.tw-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
 .node{position:absolute;font-family:var(--serif);transition:left .6s cubic-bezier(.4,0,.2,1),top .6s cubic-bezier(.4,0,.2,1),opacity .4s,transform .15s;transform:translate(-50%,-50%);cursor:pointer;white-space:nowrap;padding:2px 6px;border-radius:7px}
 .node:hover{transform:translate(-50%,-50%) scale(1.12);z-index:6}
 .node.center{font-size:30px;font-weight:600;cursor:default}
@@ -402,7 +404,7 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
         </div>
         <div class="C-side">
           <h4>Real nearest neighbors</h4>
-          <div class="ctx-note">from the full 400K-word space — context, not interactive</div>
+          <div class="ctx-note">from the full 400K-word space. Colored words are in this tool’s 492 — click to walk there; gray ones aren’t shipped.</div>
           <div class="true-list" id="C-true"></div>
         </div>
       </div>
@@ -1186,8 +1188,19 @@ const ModeC = {
     (TRUE_NB[word] || []).slice(0, 10).forEach((w, i) => {
       const row = el("div", "true-row");
       row.append(el("span", "rank num", String(i + 1)));
-      const tw = el("span", "tw", w); if (INDEX[w] != null) tw.style.color = clusterVar(w, "d");
-      row.append(tw); tl.append(row);
+      if (INDEX[w] != null) {
+        // this true neighbor is in the shipped 492 — let the user walk there
+        const tw = el("button", "tw tw-link", w);
+        tw.type = "button"; tw.style.color = clusterVar(w, "d");
+        tw.title = "in this tool’s 492 words — click to explore";
+        tw.addEventListener("click", () => this.setCenter(w, true));
+        row.append(tw);
+      } else {
+        const tw = el("span", "tw", w);
+        tw.title = "not in this tool’s 492-word slice";
+        row.append(tw);
+      }
+      tl.append(row);
     });
     this.render(animate);
   },
