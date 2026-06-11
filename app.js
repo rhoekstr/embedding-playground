@@ -476,6 +476,7 @@ const ModeB = {
     if (!a || !b || !c) { res.innerHTML = '<span class="placeholder">?</span>'; list.innerHTML = '<div class="muted tiny">Fill the three slots, or pick a scenario below.</div>'; this.clearPCA(); return; }
     const top = analogy(a, b, c, 5);
     const isBias = this._scn && this._scn.kind === "bias";
+    $("#B-pca").dataset.bias = isBias ? "1" : "0";
     const isFail = this.mode === "failure";
     // result slot
     res.innerHTML = ""; res.classList.toggle("bias", isBias);
@@ -533,14 +534,32 @@ const ModeB = {
     const sizeFor = o => o.role === "result" ? 22 : o.role === "alt" ? 13 : 17;
     const boxes = pts.map(o => {
       const fs = sizeFor(o);
-      return { o, x: sx(o.p[0]), y: sy(o.p[1]), w: textWidth(o.w, fs) + 26, h: fs + 10,
+      const valW = o.role === "in" ? 0 : 30; // appended cosine value
+      return { o, x: sx(o.p[0]), y: sy(o.p[1]), w: textWidth(o.w, fs) + 26 + valW, h: fs + 10,
                weight: o.role === "alt" ? 1 : 0 };
     });
-    const tx = sx(dPt[0]), ty = sy(dPt[1]);
+    let tx = sx(dPt[0]), ty = sy(dPt[1]);
+    // if pinned math anchors land on the caption, slide the WHOLE cloud up —
+    // a rigid translation keeps every angle and length of the picture intact
+    const noteRect = (staticNote && staticNote.style.display !== "none") ? staticNote.getBoundingClientRect() : null;
+    if (noteRect) {
+      const nLeft = noteRect.left - rect.left - 6, nRight = nLeft + noteRect.width + 12, nTop = noteRect.top - rect.top - 6;
+      let needUp = 0;
+      const probe = (x, y, w, h) => {
+        if (x + w / 2 > nLeft && x - w / 2 < nRight && y + h / 2 > nTop) needUp = Math.max(needUp, y + h / 2 - nTop);
+      };
+      boxes.forEach(bx => { if (!bx.weight) probe(bx.x, bx.y, bx.w, bx.h); });
+      probe(tx, ty, 26, 26);
+      if (needUp) {
+        const headroom = Math.max(0, Math.min(...boxes.map(bx => bx.y - bx.h / 2), ty - 13) - 10);
+        const shift = Math.min(needUp, headroom);
+        boxes.forEach(bx => { bx.y -= shift; });
+        ty -= shift;
+      }
+    }
     const obstacles = [{ x: tx, y: ty, w: 24, h: 24, weight: 0 }];
-    if (staticNote && staticNote.style.display !== "none") {
-      const nr = staticNote.getBoundingClientRect();
-      obstacles.push({ x: nr.left - rect.left + nr.width / 2, y: nr.top - rect.top + nr.height / 2, w: nr.width, h: nr.height, weight: 0 });
+    if (noteRect) {
+      obstacles.push({ x: noteRect.left - rect.left + noteRect.width / 2, y: noteRect.top - rect.top + noteRect.height / 2, w: noteRect.width, h: noteRect.height, weight: 0 });
     }
     declutter([...boxes, ...obstacles], { x0: 6, y0: 8, x1: W - 6, y1: H - 8 });
     boxes.forEach(bx => { bx.o.x = bx.x; bx.o.y = bx.y; bx.o.bw = bx.w; bx.o.bh = bx.h; });
@@ -600,14 +619,33 @@ const ModeB = {
     cross.style.opacity = "0"; cross.style.transition = "opacity .35s";
     svg.append(cross);
     setTimeout(() => { cross.style.opacity = "1"; }, 2200);
-    const [s1, s2] = trimLine([tx, ty], { w: 20, h: 20 }, [ir.x, ir.y], boxOf(ir));
-    const snap = document.createElementNS(svg.namespaceURI, "line");
-    snap.setAttribute("x1", s1[0]); snap.setAttribute("y1", s1[1]); snap.setAttribute("x2", s2[0]); snap.setAttribute("y2", s2[1]);
-    snap.setAttribute("stroke", "var(--ink-faint)"); snap.setAttribute("stroke-width", "1.5"); snap.setAttribute("stroke-dasharray", "3 4");
-    snap.style.opacity = "0"; snap.style.transition = "opacity .35s";
-    svg.append(snap);
-    setTimeout(() => { snap.style.opacity = "1"; }, 2400);
+    // dotted hop(s) from ✕: always to the winner, labeled with its true cosine;
+    // extra fainter hops when runners-up are within 0.03 — a visible near-tie
+    const hop = (target, sim, main, delay) => {
+      const [s1, s2] = trimLine([tx, ty], { w: 20, h: 20 }, [target.x, target.y], boxOf(target));
+      const ln = document.createElementNS(svg.namespaceURI, "line");
+      ln.setAttribute("x1", s1[0]); ln.setAttribute("y1", s1[1]); ln.setAttribute("x2", s2[0]); ln.setAttribute("y2", s2[1]);
+      ln.setAttribute("stroke", "var(--ink-faint)"); ln.setAttribute("stroke-width", main ? "1.5" : "1");
+      ln.setAttribute("stroke-dasharray", main ? "3 4" : "2 5");
+      if (!main) ln.setAttribute("stroke-opacity", ".65");
+      ln.style.opacity = "0"; ln.style.transition = "opacity .35s";
+      svg.append(ln);
+      const lt = document.createElementNS(svg.namespaceURI, "text");
+      lt.setAttribute("x", (s1[0] + s2[0]) / 2); lt.setAttribute("y", (s1[1] + s2[1]) / 2 - 6);
+      lt.setAttribute("fill", "var(--ink-faint)"); lt.setAttribute("font-size", "11"); lt.setAttribute("text-anchor", "middle");
+      lt.setAttribute("font-family", "'Helvetica Neue',Arial,sans-serif");
+      lt.textContent = main ? `nearest · ${sim.toFixed(2)}` : sim.toFixed(2);
+      lt.style.opacity = "0"; lt.style.transition = "opacity .35s";
+      svg.append(lt);
+      setTimeout(() => { ln.style.opacity = "1"; lt.style.opacity = "1"; }, delay);
+    };
+    hop(ir, top[0][1], true, 2400);
+    top.slice(1).filter(r => top[0][1] - r[1] <= 0.03).forEach((r, i) => {
+      const o = find(r[0]);
+      if (o) hop(o, r[1], false, 2550 + i * 120);
+    });
 
+    const simOf = Object.fromEntries(top.map(r => [r[0], r[1]]));
     const delayFor = o => o.role === "in" ? 0 : o.role === "result" ? 2400 : 2700;
     pts.forEach(o => {
       const node = el("div", "pca-node serif"); node.style.position = "absolute";
@@ -616,8 +654,15 @@ const ModeB = {
       if (o.role === "result") { node.style.fontSize = "22px"; node.style.fontWeight = "600"; node.style.color = $("#B-pca").dataset.bias === "1" ? "var(--c5-d)" : "var(--c1-d)"; node.style.background = "rgba(255,255,255,.7)"; node.textContent = o.w; }
       else if (o.role === "alt") { node.style.fontSize = "13px"; node.style.color = "var(--ink-faint)"; node.textContent = o.w; }
       else { node.style.fontSize = "17px"; node.style.color = clusterVar(o.w, "d"); node.textContent = o.w; }
+      // true 300-d cosine, carried with the word: on-screen distance is the
+      // flattening, the number is the math
+      if (o.role !== "in" && simOf[o.w] != null) {
+        const val = el("span", "num", simOf[o.w].toFixed(2));
+        val.style.cssText = `font-size:${o.role === "result" ? 12 : 10}px;color:var(--ink-faint);margin-left:5px;font-weight:400;font-family:'Helvetica Neue',Arial,sans-serif`;
+        node.append(val);
+      }
       const dot = el("span");
-      dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:${o.role === "result" ? 3 : 2}px;background:${o.role === "result" ? "var(--c1-d)" : o.role === "in" ? clusterVar(o.w, "d") : "var(--ink-faint)"}`;
+      dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:${o.role === "result" ? 3 : 2}px;background:${o.role === "result" ? ($("#B-pca").dataset.bias === "1" ? "var(--c5-d)" : "var(--c1-d)") : o.role === "in" ? clusterVar(o.w, "d") : "var(--ink-faint)"}`;
       node.prepend(dot);
       box.append(node);
       node.style.opacity = "0";

@@ -23,21 +23,30 @@ ANALOGY VERIFICATION (nearest within the 500-word slice)
 [PASS          ] grammar      bigger-big+small -> smaller
                  top5: smaller(0.77), large(0.58), scale(0.37), cost(0.36), capacity(0.34)
                  expected: smaller
-[PASS          ] pmc_worker   worker-labor+employment -> employee
-                 top5: employee(0.61), job(0.47), employer(0.47), hiring(0.44), benefits(0.42)
+[PASS          ] pmc_worker   worker-labor+employer -> employee
+                 top5: employee(0.70), contractor(0.46), spouse(0.46), janitor(0.42), beneficiary(0.41)
                  expected: employee
-[PASS          ] pmc_pay      salary-employee+employer -> wage
-                 top5: wage(0.53), pension(0.46), minimum(0.40), retirement(0.39), monthly(0.38)
-                 expected: wage
+[PASS          ] pmc_eval     evaluation-evaluate+monitor -> monitoring
+                 top5: monitoring(0.70), inspection(0.48), assessment(0.43), tracking(0.41), compliance(0.41)
+                 expected: monitoring
 [PASS          ] bias_doctor  doctor-man+woman -> nurse
                  top5: nurse(0.61), dentist(0.52), surgeon(0.50), mother(0.49), her(0.48)
                  expected: nurse
-[PASS          ] bias_prog    programmer-man+woman -> designer
-                 top5: designer(0.39), technician(0.38), homemaker(0.37), librarian(0.37), researcher(0.33)
-                 expected: designer
+[PASS          ] bias_ceo     ceo-man+woman -> executive
+                 top5: executive(0.62), parent(0.37), employee(0.34), female(0.31), director(0.30)
+                 expected: executive
 [PASS          ] morphology   walking-walk+run -> running
                  top5: running(0.71), well(0.43), state(0.36), he(0.36), job(0.35)
                  expected: running
+[PASS          ] pmc_pay      salary-employee+employer -> wage
+                 top5: wage(0.53), pension(0.46), minimum(0.40), retirement(0.39), monthly(0.38)
+                 expected: wage
+[PASS          ] bias_prog    programmer-man+woman -> designer
+                 top5: designer(0.39), technician(0.38), homemaker(0.37), librarian(0.37), researcher(0.33)
+                 expected: designer
+[PASS          ] bias_sci     scientist-man+woman -> researcher
+                 top5: researcher(0.62), professor(0.51), doctor(0.38), surgeon(0.38), female(0.36)
+                 expected: researcher
 [OPEN          ] pmc_measure  measure-quarterly+annual -> plan
                  top5: plan(0.43), minimum(0.42), initiative(0.38), benefits(0.38), budget(0.37)
 [OPEN          ] pmc_plan     milestone-project+program -> achievement
@@ -73,13 +82,13 @@ ANALOGY VERIFICATION (nearest within the 500-word slice)
                  top5: girl(0.84), girls(0.64), mother(0.64), child(0.63), daughter(0.60)
                  expected: girl
 
-Verified/usable analogies: 20 (target >= 15)
+Verified/usable analogies: 23 (target >= 15)
 
 FAILURE-EXAMPLE candidates (for the Mode B 'failure' button):
   fail_clusters  paris-france+happy -> excited   [excited(0.50), pretty(0.48), sad(0.46), love(0.43), good(0.43)]
   fail_animal    king-man+dog -> cat   [cat(0.42), queen(0.40), lion(0.40), prince(0.34), horse(0.32)]
   fail_pmc       measure-data+love -> friend   [friend(0.39), joy(0.38), good(0.37), him(0.36), her(0.35)]
 
-Wrote /Users/rhoekstr/Desktop/Code/Embeddings/embeddings.json (898 KB raw; ~314 KB gzipped est.)
-  words: 492  vectors: 1968x300 int8
-Total time: 13.8s
+Wrote /Users/rhoekstr/Desktop/Code/Embeddings/embeddings.json (900 KB raw; ~315 KB gzipped est.)
+  words: 492  vectors: 492x300 float32
+Total time: 14.1s
