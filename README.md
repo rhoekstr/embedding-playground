@@ -44,6 +44,14 @@ in the full 400K-word space, so each word's true top neighbors from the full
 space are shown as context. The bias demonstrations are descriptive: the
 geometry reflects how words co-occur in human writing.
 
+## Teaching with it
+
+The tool was built for a ~10-minute hands-on segment in a workplace
+AI-literacy series. [FACILITATOR.md](FACILITATOR.md) is the one-page run of
+show: which scenarios to run in what order, how to frame the bias
+demonstration (descriptive, not normative), what to say when an analogy
+flops, and a day-before checklist.
+
 ## Rebuilding the data
 
 ```

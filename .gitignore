@@ -1,9 +1,8 @@
 # raw GloVe source (~1.9 GB) — download per README, never commit
 data/
 
-# internal session docs — kept local on purpose
+# internal session docs — kept local on purpose (FACILITATOR.md is published)
 embedding_playground_prd.md
-FACILITATOR.md
 CLUSTER_REVIEW.md
 PROJECT_SUMMARY.md
 
