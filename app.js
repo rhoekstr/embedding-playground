@@ -562,27 +562,53 @@ const ModeB = {
     box.append(svg);
     const find = w => pts.find(p => p.w === w);
     const ia = find(a), ib = find(b), ic = find(c), ir = find(result);
-    // the same difference vector, drawn twice: b→a, then c→? — the analogy
-    const [q1, q2] = trimLine([ib.x, ib.y], boxOf(ib), [ia.x, ia.y], boxOf(ia));
-    this.arrow(svg, q1, q2, `${b} → ${a}`, 250);
-    const [q3, q4] = trimLine([ic.x, ic.y], boxOf(ic), [tx, ty], { w: 26, h: 26 });
-    this.arrow(svg, q3, q4, `${c} → ?`, 900);
-    // ✕ where the math lands, then a dotted hop to the nearest real word
+    // shared trims for both arrows, so the carried copy lands exactly on its
+    // final geometry (the parallelogram guarantees the same direction/length)
+    const adx = ia.x - ib.x, ady = ia.y - ib.y, alen = Math.hypot(adx, ady) || 1;
+    const aux = adx / alen, auy = ady / alen;
+    const edgeT = bx => Math.min(aux ? Math.abs(bx.w / 2 / aux) : 1e9, auy ? Math.abs(bx.h / 2 / auy) : 1e9);
+    const half = alen / 2 - 4;
+    const tTail = Math.min(Math.max(edgeT(boxOf(ib)), edgeT(boxOf(ic))) + 3, half);
+    const tTip = Math.min(Math.max(edgeT(boxOf(ia)), edgeT({ w: 26, h: 26 })) + 3, half);
+    const p1 = [ib.x + aux * tTail, ib.y + auy * tTail], p2 = [ia.x - aux * tTip, ia.y - auy * tTip];
+    const carryD = [ic.x - ib.x, ic.y - ib.y]; // exact: ✕ − a == c − b
+
+    // 1. SUBTRACTION — the difference arrow, drawn from b to a, named a − b
+    const sub = this.arrow(svg, p1, p2, `${a} − ${b}`, 250);
+    // 2. ADDITION — the same arrow is picked up and carried to start at c:
+    //    adding c just re-bases the difference vector at c
+    const carry = document.createElementNS(svg.namespaceURI, "g");
+    const cline = document.createElementNS(svg.namespaceURI, "line");
+    cline.setAttribute("x1", p1[0]); cline.setAttribute("y1", p1[1]); cline.setAttribute("x2", p2[0]); cline.setAttribute("y2", p2[1]);
+    cline.setAttribute("stroke", "var(--ink-soft)"); cline.setAttribute("stroke-width", "2"); cline.setAttribute("marker-end", "url(#ah)");
+    const clabel = document.createElementNS(svg.namespaceURI, "text");
+    clabel.setAttribute("x", (p1[0] + p2[0]) / 2); clabel.setAttribute("y", (p1[1] + p2[1]) / 2 + 18);
+    clabel.setAttribute("fill", "var(--ink-soft)"); clabel.setAttribute("font-size", "13"); clabel.setAttribute("font-family", "Georgia,serif"); clabel.setAttribute("text-anchor", "middle");
+    clabel.textContent = `+ ${c}`;
+    carry.append(cline, clabel);
+    carry.style.opacity = "0"; carry.style.transition = "opacity .3s, transform .8s cubic-bezier(.45,.05,.35,1)";
+    svg.append(carry);
+    setTimeout(() => { carry.style.opacity = "1"; }, 1150);          // a copy appears on the difference arrow
+    setTimeout(() => {                                                // ...and is carried to c
+      carry.style.transform = `translate(${carryD[0]}px, ${carryD[1]}px)`;
+      sub.line.style.opacity = ".4"; sub.text.style.opacity = ".5";   // focus follows the moving copy
+    }, 1400);
+    // 3. ✕ where the math lands, then a dotted hop to the nearest real word
     const cross = document.createElementNS(svg.namespaceURI, "text");
     cross.setAttribute("x", tx); cross.setAttribute("y", ty); cross.setAttribute("text-anchor", "middle"); cross.setAttribute("dominant-baseline", "central");
     cross.setAttribute("font-size", "16"); cross.setAttribute("fill", "var(--ink)"); cross.textContent = "✕";
     cross.style.opacity = "0"; cross.style.transition = "opacity .35s";
     svg.append(cross);
-    setTimeout(() => { cross.style.opacity = "1"; }, 1500);
+    setTimeout(() => { cross.style.opacity = "1"; }, 2200);
     const [s1, s2] = trimLine([tx, ty], { w: 20, h: 20 }, [ir.x, ir.y], boxOf(ir));
     const snap = document.createElementNS(svg.namespaceURI, "line");
     snap.setAttribute("x1", s1[0]); snap.setAttribute("y1", s1[1]); snap.setAttribute("x2", s2[0]); snap.setAttribute("y2", s2[1]);
     snap.setAttribute("stroke", "var(--ink-faint)"); snap.setAttribute("stroke-width", "1.5"); snap.setAttribute("stroke-dasharray", "3 4");
     snap.style.opacity = "0"; snap.style.transition = "opacity .35s";
     svg.append(snap);
-    setTimeout(() => { snap.style.opacity = "1"; }, 1650);
+    setTimeout(() => { snap.style.opacity = "1"; }, 2400);
 
-    const delayFor = o => o.role === "in" ? 0 : o.role === "result" ? 1650 : 1900;
+    const delayFor = o => o.role === "in" ? 0 : o.role === "result" ? 2400 : 2700;
     pts.forEach(o => {
       const node = el("div", "pca-node serif"); node.style.position = "absolute";
       node.style.left = o.x + "px"; node.style.top = o.y + "px"; node.style.transform = "translate(-50%,-50%)";
@@ -604,7 +630,7 @@ const ModeB = {
     line.setAttribute("stroke", "var(--ink-soft)"); line.setAttribute("stroke-width", "2"); line.setAttribute("marker-end", "url(#ah)");
     const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
     line.setAttribute("stroke-dasharray", len); line.setAttribute("stroke-dashoffset", len);
-    line.style.transition = "stroke-dashoffset .55s ease";
+    line.style.transition = "stroke-dashoffset .55s ease, opacity .45s";
     svg.append(line);
     setTimeout(() => line.setAttribute("stroke-dashoffset", "0"), delay || 0);
     const t = document.createElementNS(svg.namespaceURI, "text");
@@ -613,6 +639,7 @@ const ModeB = {
     t.style.opacity = "0"; t.style.transition = "opacity .4s";
     svg.append(t);
     setTimeout(() => { t.style.opacity = "1"; }, (delay || 0) + 250);
+    return { line, text: t };
   },
 };
 
