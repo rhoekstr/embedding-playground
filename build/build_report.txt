@@ -1,10 +1,10 @@
-Lexicon size (pre-filter): 750 words
+Lexicon size (pre-filter): 755 words
 
-Lexicon words present in GloVe: 750
+Lexicon words present in GloVe: 755
 All lexicon words present in GloVe.
 
 Cluster sizes (post-filter):
-  c1_universal: 185
+  c1_universal: 190
   c2_kinship: 91
   c3_geography: 98
   c4_pm_dol: 208
@@ -89,16 +89,22 @@ FAILURE-EXAMPLE candidates (for the Mode B 'failure' button):
   fail_pmc       measure-data+love -> bill   [bill(0.43), friend(0.39), joy(0.38), good(0.37), him(0.36)]
 
 SENSE DOMINANCE (Mode D) — mean cosine of word to each anchor set:
-  measure    the KPI                0.267 ( 32%)  vs  the legislative act    0.573 ( 68%)
-  plant      the factory            0.443 ( 56%)  vs  the living thing       0.347 ( 44%)
-  bank       the financial one      0.394 ( 62%)  vs  the riverside          0.237 ( 38%)
-  court      the legal one          0.603 ( 69%)  vs  the royal one          0.268 ( 31%)
-  bat        the animal             0.203 ( 36%)  vs  the baseball one       0.354 ( 64%)
-  organ      the instrument         0.254 ( 49%)  vs  the body part          0.268 ( 51%)
-  pupil      the student            0.367 ( 70%)  vs  the eye                0.155 ( 30%)
-  check      the payment            0.293 ( 43%)  vs  the verification       0.396 ( 57%)
-  crane      the bird               0.210 ( 54%)  vs  the machine            0.182 ( 46%)
+  measure    the KPI 0.267 (32%)  the legislative act 0.573 (68%)
+  court      the legal one 0.603 (47%)  the royal one 0.268 (21%)  the sports one 0.211 (17%)  the dating one 0.196 (15%)
+  bill       the legislative act 0.612 (62%)  the invoice 0.223 (23%)  the bird’s beak 0.152 (15%)
+  date       the calendar one 0.393 (56%)  the romance 0.249 (35%)  the fruit 0.065 (9%)
+  organ      the instrument 0.254 (42%)  the body part 0.268 (44%)  the arm of government 0.082 (14%)
+  plant      the factory 0.443 (56%)  the living thing 0.347 (44%)
+  bank       the financial one 0.394 (62%)  the riverside 0.237 (38%)
+  bat        the animal 0.203 (36%)  the baseball one 0.354 (64%)
+  bark       the dog’s 0.191 (32%)  the tree’s 0.399 (68%)
+  palm       the tree 0.508 (69%)  the hand 0.224 (31%)
+  pupil      the student 0.367 (70%)  the eye 0.155 (30%)
+  star       the celebrity 0.296 (48%)  the one in the sky 0.327 (52%)
+  light      the glow 0.473 (54%)  the not-heavy 0.398 (46%)
+  check      the payment 0.302 (43%)  the verification 0.396 (57%)
+  crane      the bird 0.210 (54%)  the machine 0.182 (46%)
 
-Wrote /Users/rhoekstr/Desktop/Code/Embeddings/embeddings.json (1370 KB raw; ~479 KB gzipped est.)
-  words: 750  vectors: 750x300 float32
-Total time: 14.5s
+Wrote /Users/rhoekstr/Desktop/Code/Embeddings/embeddings.json (1380 KB raw; ~483 KB gzipped est.)
+  words: 755  vectors: 755x300 float32
+Total time: 19.4s

@@ -242,19 +242,20 @@ def main():
     senses_out = []
     for s in SENSES:
         w = s["word"]
-        missing_anchor = [x for side in ("a", "b") for x in s[side]["anchors"]
+        missing_anchor = [x for sense in s["senses"] for x in sense["anchors"]
                           if x not in slice_pos] + ([w] if w not in slice_pos else [])
         if missing_anchor:
             sys.exit(f"SENSES['{w}']: not in slice: {missing_anchor}")
         wv = slice_norm[slice_pos[w]]
-        means = {}
-        for side in ("a", "b"):
-            sims = [float(wv @ slice_norm[slice_pos[x]]) for x in s[side]["anchors"]]
-            means[side] = sum(sims) / len(sims)
-        share_a = means["a"] / (means["a"] + means["b"])
-        log(f"  {w:10s} {s['a']['label']:22s} {means['a']:.3f} ({share_a:4.0%})  vs  "
-            f"{s['b']['label']:22s} {means['b']:.3f} ({1-share_a:4.0%})", report)
-        senses_out.append({"word": w, "a": s["a"], "b": s["b"]})
+        means = []
+        for sense in s["senses"]:
+            sims = [float(wv @ slice_norm[slice_pos[x]]) for x in sense["anchors"]]
+            means.append(sum(sims) / len(sims))
+        total = sum(means) or 1.0
+        parts = "  ".join(f"{sense['label']} {m:.3f} ({m/total:.0%})"
+                          for sense, m in zip(s["senses"], means))
+        log(f"  {w:10s} {parts}", report)
+        senses_out.append({"word": w, "senses": s["senses"]})
 
     # --- 6. emit embeddings.json ---
     # Vectors as one base64 little-endian Float32Array (row-major, one row per

@@ -64,6 +64,8 @@ CLUSTERS = {
         "football", "soccer", "ball", "game", "team", "beach",
         # 2026-06-11 Mode D sense anchors
         "tree", "flower", "garden", "river", "shore", "music",
+        # 2026-06-11 Mode D round 2 sense anchors
+        "heavy", "weight", "moon", "sky", "leaf",
     ],
     # ------------------------------------------------------------------ c2
     "c2_kinship": [
@@ -278,31 +280,54 @@ FAILURE_CANDIDATES = [
 # two sense centroids; its position shows which usage dominates the vector.
 # Every anchor must be a lexicon word (preprocess validates).
 SENSES = [
-    {"word": "measure",
-     "a": {"label": "the KPI", "anchors": ["metric", "indicator", "benchmark", "baseline", "gauge"]},
-     "b": {"label": "the legislative act", "anchors": ["legislation", "bill", "provision", "amendment", "proposal"]}},
-    {"word": "plant",
-     "a": {"label": "the factory", "anchors": ["factory", "production", "manufacturing", "industry"]},
-     "b": {"label": "the living thing", "anchors": ["tree", "flower", "garden", "fruit"]}},
-    {"word": "bank",
-     "a": {"label": "the financial one", "anchors": ["investment", "banker", "payment", "financing"]},
-     "b": {"label": "the riverside", "anchors": ["river", "shore", "beach"]}},
-    {"word": "court",
-     "a": {"label": "the legal one", "anchors": ["judge", "law", "appeal", "attorney"]},
-     "b": {"label": "the royal one", "anchors": ["king", "queen", "royal", "throne"]}},
-    {"word": "bat",
-     "a": {"label": "the animal", "anchors": ["animal", "bird", "mouse", "wolf"]},
-     "b": {"label": "the baseball one", "anchors": ["pitcher", "ball", "game", "team"]}},
-    {"word": "organ",
-     "a": {"label": "the instrument", "anchors": ["music", "band", "composer", "singer"]},
-     "b": {"label": "the body part", "anchors": ["brain", "heart", "ear", "eye"]}},
-    {"word": "pupil",
-     "a": {"label": "the student", "anchors": ["student", "teacher", "instructor", "lecturer"]},
-     "b": {"label": "the eye", "anchors": ["eye", "ear", "nose", "brain"]}},
-    {"word": "check",
-     "a": {"label": "the payment", "anchors": ["payment", "bank", "salary", "earnings"]},
-     "b": {"label": "the verification", "anchors": ["review", "audit", "inspection", "monitor"]}},
-    {"word": "crane",
-     "a": {"label": "the bird", "anchors": ["bird", "animal", "fish"]},
-     "b": {"label": "the machine", "anchors": ["construction", "factory", "manufacturing"]}},
+    {"word": "measure", "senses": [
+        {"label": "the KPI", "anchors": ["metric", "indicator", "benchmark", "baseline", "gauge"]},
+        {"label": "the legislative act", "anchors": ["legislation", "bill", "provision", "amendment", "proposal"]}]},
+    {"word": "court", "senses": [
+        {"label": "the legal one", "anchors": ["judge", "law", "appeal", "attorney"]},
+        {"label": "the royal one", "anchors": ["king", "queen", "royal", "throne"]},
+        {"label": "the sports one", "anchors": ["ball", "game", "team", "football"]},
+        {"label": "the dating one", "anchors": ["wedding", "married", "couple", "girlfriend"]}]},
+    {"word": "bill", "senses": [
+        {"label": "the legislative act", "anchors": ["legislation", "amendment", "provision", "proposal"]},
+        {"label": "the invoice", "anchors": ["payment", "earnings", "salary"]},
+        {"label": "the bird\u2019s beak", "anchors": ["bird", "animal"]}]},
+    {"word": "date", "senses": [
+        {"label": "the calendar one", "anchors": ["deadline", "schedule", "timeline", "quarterly"]},
+        {"label": "the romance", "anchors": ["girlfriend", "boyfriend", "wedding", "couple"]},
+        {"label": "the fruit", "anchors": ["fruit", "banana", "coconut", "mango"]}]},
+    {"word": "organ", "senses": [
+        {"label": "the instrument", "anchors": ["music", "band", "composer", "singer"]},
+        {"label": "the body part", "anchors": ["brain", "heart", "ear", "eye"]},
+        {"label": "the arm of government", "anchors": ["agency", "bureau", "department", "division"]}]},
+    {"word": "plant", "senses": [
+        {"label": "the factory", "anchors": ["factory", "production", "manufacturing", "industry"]},
+        {"label": "the living thing", "anchors": ["tree", "flower", "garden", "fruit"]}]},
+    {"word": "bank", "senses": [
+        {"label": "the financial one", "anchors": ["investment", "banker", "payment", "financing"]},
+        {"label": "the riverside", "anchors": ["river", "shore", "beach"]}]},
+    {"word": "bat", "senses": [
+        {"label": "the animal", "anchors": ["animal", "bird", "mouse", "wolf"]},
+        {"label": "the baseball one", "anchors": ["pitcher", "ball", "game", "team"]}]},
+    {"word": "bark", "senses": [
+        {"label": "the dog\u2019s", "anchors": ["dog", "pet", "animal"]},
+        {"label": "the tree\u2019s", "anchors": ["tree", "leaf", "flower"]}]},
+    {"word": "palm", "senses": [
+        {"label": "the tree", "anchors": ["tree", "coconut", "beach"]},
+        {"label": "the hand", "anchors": ["hand", "finger", "wrist"]}]},
+    {"word": "pupil", "senses": [
+        {"label": "the student", "anchors": ["student", "teacher", "instructor", "lecturer"]},
+        {"label": "the eye", "anchors": ["eye", "ear", "nose", "brain"]}]},
+    {"word": "star", "senses": [
+        {"label": "the celebrity", "anchors": ["musician", "artist", "singer"]},
+        {"label": "the one in the sky", "anchors": ["sun", "moon", "sky"]}]},
+    {"word": "light", "senses": [
+        {"label": "the glow", "anchors": ["lamp", "bright", "sun", "dark"]},
+        {"label": "the not-heavy", "anchors": ["heavy", "weight"]}]},
+    {"word": "check", "senses": [
+        {"label": "the payment", "anchors": ["payment", "salary", "earnings"]},
+        {"label": "the verification", "anchors": ["review", "audit", "inspection", "monitor"]}]},
+    {"word": "crane", "senses": [
+        {"label": "the bird", "anchors": ["bird", "animal", "fish"]},
+        {"label": "the machine", "anchors": ["construction", "factory", "manufacturing"]}]},
 ]
