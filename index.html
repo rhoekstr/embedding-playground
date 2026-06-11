@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Embedding Playground</title>
+<style>
+/* ============================================================ design tokens */
+:root{
+  /* surfaces & ink */
+  --bg:#f6f1e7;            /* warm cream */
+  --panel:#fbf8f1;
+  --panel-2:#f1eadc;
+  --line:#e3dac8;
+  --line-strong:#cfc3a9;
+  --ink:#2b2622;          /* warm near-black */
+  --ink-soft:#6f675c;
+  --ink-faint:#a59c8c;
+
+  /* cluster hues (light / base / dark) */
+  --c1:#4a9d6e; --c1-l:#bfe0cd; --c1-d:#2d6a48;   /* universal  - green   */
+  --c2:#c98a2b; --c2-l:#eed6a6; --c2-d:#8f5e16;   /* kinship    - amber   */
+  --c3:#3a6ea5; --c3-l:#bcd1e7; --c3-d:#244a73;   /* geography  - blue    */
+  --c4:#6c7480; --c4-l:#cdd1d6; --c4-d:#454c56;   /* pm/dol     - slate   */
+  --c5:#8f6f8e; --c5-l:#d8c8d7; --c5-d:#5f4a5e;   /* bias       - mauve   */
+  --c6:#c4673f; --c6-l:#ecc4b1; --c6-d:#8f4527;   /* polysemy   - clay    */
+
+  /* type */
+  --serif:Georgia,'Iberian','Times New Roman',serif;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+
+  --maxw:1820px;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(43,38,34,.06),0 6px 24px rgba(43,38,34,.06);
+  --shadow-lift:0 8px 30px rgba(43,38,34,.18);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+.num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.serif{font-family:var(--serif)}
+
+/* ============================================================ app frame */
+.app{
+  max-width:var(--maxw);
+  margin:0 auto;
+  min-height:100%;
+  display:flex;
+  flex-direction:column;
+  padding:26px 34px 0;
+}
+header.top{display:flex;align-items:baseline;gap:22px;flex-wrap:wrap}
+header.top h1{
+  font-family:var(--serif);
+  font-weight:600;
+  font-size:25px;
+  margin:0;
+  letter-spacing:.2px;
+}
+header.top .sub{color:var(--ink-soft);font-size:14px;max-width:680px}
+
+/* tab bar */
+nav.tabs{display:flex;gap:6px;margin:20px 0 8px}
+nav.tabs button{
+  font-family:var(--sans);
+  font-size:15px;
+  color:var(--ink-soft);
+  background:transparent;
+  border:1px solid transparent;
+  border-bottom:none;
+  padding:11px 20px;
+  border-radius:10px 10px 0 0;
+  cursor:pointer;
+  transition:background .15s,color .15s;
+}
+nav.tabs button .k{font-family:var(--serif);font-size:13px;color:var(--ink-faint);margin-right:8px}
+nav.tabs button:hover{color:var(--ink);background:rgba(0,0,0,.025)}
+nav.tabs button[aria-selected="true"]{
+  color:var(--ink);
+  background:var(--panel);
+  border-color:var(--line-strong);
+  box-shadow:0 -2px 0 var(--ink) inset;
+  font-weight:600;
+}
+
+/* mode panels */
+main{flex:1;background:var(--panel);border:1px solid var(--line-strong);border-radius:0 12px 12px 12px;padding:22px 24px;min-height:0}
+.mode{display:none;height:100%}
+.mode.active{display:block}
+.mode-head{display:flex;align-items:baseline;gap:14px;margin:0 0 14px}
+.mode-head h2{font-family:var(--serif);font-weight:600;font-size:19px;margin:0}
+.mode-head .q{color:var(--ink-soft);font-size:14px;font-style:italic}
+
+/* generic controls */
+button.btn{
+  font-family:var(--sans);font-size:14px;color:var(--ink);
+  background:var(--panel);border:1px solid var(--line-strong);
+  border-radius:8px;padding:8px 13px;cursor:pointer;transition:.13s;
+}
+button.btn:hover{background:#fff;border-color:var(--ink-faint)}
+button.btn:active{transform:translateY(1px)}
+.muted{color:var(--ink-soft)}
+.tiny{font-size:12.5px}
+
+/* scenario buttons */
+.scn-group{display:flex;flex-direction:column;gap:7px}
+.scn-group .scn-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin:4px 0 2px}
+button.scn{
+  text-align:left;font-size:13.5px;line-height:1.3;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:9px 12px;cursor:pointer;transition:.13s;color:var(--ink);
+}
+button.scn:hover{background:#fff;border-color:var(--c4);box-shadow:var(--shadow)}
+button.scn .scn-teach{display:block;color:var(--ink-soft);font-size:11.5px;margin-top:2px}
+button.scn.failure{border-style:dashed;border-color:var(--c6);background:#fbf2ec}
+button.scn.failure:hover{border-color:var(--c6-d)}
+
+/* cluster legend chips & palette */
+.chip{
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--serif);
+  font-size:14px;padding:4px 10px;border-radius:999px;cursor:pointer;
+  border:1px solid transparent;user-select:none;
+}
+.swatch{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+.word{
+  font-family:var(--serif);font-size:15px;
+}
+
+/* footer chrome */
+footer.chrome{
+  color:var(--ink-faint);font-size:12px;padding:14px 4px 22px;
+  display:flex;gap:18px;flex-wrap:wrap;align-items:center;
+}
+footer.chrome b{color:var(--ink-soft);font-weight:600}
+
+/* compare tray */
+#tray{
+  position:fixed;right:18px;bottom:18px;width:230px;background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:12px;box-shadow:var(--shadow-lift);
+  padding:12px;z-index:40;transition:opacity .2s;
+}
+#tray h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);font-weight:600}
+#tray.drop-armed{outline:2px dashed var(--c4);outline-offset:3px}
+#tray .tray-items{display:flex;flex-wrap:wrap;gap:6px;min-height:26px}
+#tray .tray-empty{color:var(--ink-faint);font-size:12.5px;font-style:italic}
+.pill{
+  font-family:var(--serif);font-size:14px;padding:4px 9px;border-radius:999px;
+  border:1px solid var(--line-strong);background:#fff;display:inline-flex;align-items:center;gap:7px;
+}
+.pill .x{cursor:pointer;color:var(--ink-faint);font-family:var(--sans);font-size:13px}
+.pill .x:hover{color:var(--c6-d)}
+
+/* drag affordance */
+.dragging{opacity:.5}
+.drag-ghost{box-shadow:var(--shadow-lift)!important;transform:scale(1.04)}
+
+/* loading / error */
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:100;color:var(--ink-soft);font-family:var(--serif)}
+#boot.err{color:var(--c6-d)}
+
+/* ===================================================== MODE A: cosine grid */
+.A-wrap{display:grid;grid-template-columns:280px 1fr;gap:26px;height:100%}
+.A-rail{display:flex;flex-direction:column;gap:14px;overflow:auto;padding-right:6px}
+.A-stage{position:relative;min-width:0;display:flex;flex-direction:column}
+.A-grid-scroll{overflow:auto;flex:1;display:flex;align-items:center;justify-content:center}
+.grid{position:relative;transition:opacity .3s}
+.grid.faded .cell:not(.hot){opacity:.28}
+.grid.faded .glabel{opacity:.28}
+.cell{
+  position:absolute;display:flex;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums;font-size:13px;border-radius:4px;
+  color:#fff;transition:opacity .25s,transform .18s,box-shadow .18s;cursor:default;
+  border:1px solid rgba(255,255,255,.10);
+}
+.cell.lowtext{color:var(--ink)}
+.cell.hot{transform:scale(1.06);box-shadow:var(--shadow-lift);z-index:5;border-color:#fff}
+.cell.reveal-hidden{opacity:0}
+.cell.val-hidden{color:transparent!important}
+.glabel{
+  position:absolute;font-family:var(--serif);font-size:14px;color:var(--ink);
+  white-space:nowrap;transition:opacity .25s;
+}
+.glabel.col{transform-origin:left center;transform:rotate(-45deg)}
+.glabel.col .lab-inner{display:inline-block}
+.glabel.row{text-align:right}
+.glabel.drag-handle{cursor:grab}
+.glabel.drag-over{color:var(--c4-d);font-weight:700;text-decoration:underline}
+.A-readout{
+  position:absolute;left:50%;top:14px;transform:translateX(-50%);
+  display:none;align-items:center;gap:16px;background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:12px;padding:10px 20px;box-shadow:var(--shadow);z-index:8;
+}
+.A-readout.show{display:flex}
+.A-readout .w{font-family:var(--serif);font-size:21px}
+.A-readout .v{font-size:24px;font-variant-numeric:tabular-nums;font-weight:600}
+.A-readout .op{color:var(--ink-faint)}
+
+/* palette */
+.palette{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.pal-filters{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.pal-search{width:100%;padding:7px 10px;border:1px solid var(--line-strong);border-radius:7px;font-family:var(--serif);font-size:14px;margin-bottom:8px;background:#fff;color:var(--ink)}
+.pal-list{display:flex;flex-wrap:wrap;gap:5px;max-height:230px;overflow:auto}
+.pal-word{
+  font-family:var(--serif);font-size:13.5px;padding:3px 9px;border-radius:7px;
+  border:1px solid var(--line-strong);background:#fff;cursor:grab;user-select:none;transition:.1s;
+}
+.pal-word:hover{border-color:var(--ink-faint);background:#fff}
+.pal-word.in-use{opacity:.4;cursor:default}
+.selected-tray{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;border:1px dashed var(--line-strong);border-radius:9px;padding:8px}
+.selected-tray.drop-armed{border-color:var(--c4);background:#fff}
+.sel-word{font-family:var(--serif);font-size:14px;padding:4px 10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line-strong);display:inline-flex;gap:7px;align-items:center;cursor:grab}
+.sel-word .x{cursor:pointer;color:var(--ink-faint);font-family:var(--sans)}
+.sel-word .x:hover{color:var(--c6-d)}
+
+/* ===================================================== MODE B: word math */
+.B-wrap{display:flex;flex-direction:column;gap:14px;height:100%}
+.equation{
+  display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
+  padding:14px 6px 6px;
+}
+.eq-slot{
+  min-width:150px;height:78px;border-radius:14px;border:2px dashed var(--line-strong);
+  display:flex;align-items:center;justify-content:center;font-family:var(--serif);
+  font-size:30px;color:var(--ink);background:var(--panel);cursor:pointer;transition:.14s;padding:0 18px;
+}
+.eq-slot.filled{border-style:solid}
+.eq-slot.armed,.eq-slot.drop-armed{border-color:var(--c4);background:#fff;box-shadow:var(--shadow)}
+.eq-slot.result{border-color:var(--c1-d);background:#fff;min-width:180px}
+.eq-slot.result.bias{border-color:var(--c5)}
+.eq-slot .placeholder{color:var(--ink-faint);font-size:16px;font-family:var(--sans)}
+.eq-op{font-family:var(--serif);font-size:34px;color:var(--ink-soft)}
+.eq-slot input{border:none;background:transparent;font-family:var(--serif);font-size:26px;text-align:center;width:100%;color:var(--ink);outline:none}
+.B-main{display:grid;grid-template-columns:1fr 320px;gap:22px;flex:1;min-height:0}
+.pca-box{position:relative;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fcfaf4,#f7f1e6);overflow:hidden}
+.pca-note{position:absolute;left:14px;bottom:12px;font-size:11.5px;color:var(--ink-faint);max-width:60%}
+.B-side{display:flex;flex-direction:column;gap:12px;min-height:0}
+.results-list{display:flex;flex-direction:column;gap:6px}
+.result-row{display:flex;align-items:center;gap:10px;padding:7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.result-row.top{border-color:var(--c1-d);background:#fff;box-shadow:var(--shadow)}
+.result-row.top.bias{border-color:var(--c5)}
+.result-row .rw{font-family:var(--serif);font-size:17px}
+.result-row .rbar{flex:1;height:7px;border-radius:5px;background:var(--line)}
+.result-row .rbar i{display:block;height:100%;border-radius:5px;background:var(--c4)}
+.result-row.top .rbar i{background:var(--c1-d)}
+.result-row.top.bias .rbar i{background:var(--c5)}
+.result-row .rv{font-variant-numeric:tabular-nums;font-size:14px;color:var(--ink-soft);width:42px;text-align:right}
+.bias-note{font-size:12.5px;color:var(--c5-d);background:#f7f0f6;border:1px solid var(--c5-l);border-radius:9px;padding:10px 12px;line-height:1.4}
+.B-scn{display:flex;flex-wrap:wrap;gap:7px}
+.B-scn button.scn{flex:0 0 auto}
+
+/* ===================================================== MODE C: neighborhood */
+.C-wrap{display:grid;grid-template-columns:260px 1fr 290px;gap:22px;height:100%}
+.C-rail{display:flex;flex-direction:column;gap:14px;overflow:auto}
+.C-stage{position:relative;border:1px solid var(--line);border-radius:12px;background:radial-gradient(circle at 50% 50%,#fcfaf4,#f3ecdf);overflow:hidden;min-width:0}
+.C-side{display:flex;flex-direction:column;gap:10px;min-height:0}
+.C-side h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);font-weight:600}
+.C-side .ctx-note{font-size:11.5px;color:var(--ink-faint);font-style:italic;margin-bottom:4px}
+.true-list{display:flex;flex-direction:column;gap:3px;overflow:auto}
+.true-row{display:flex;gap:9px;align-items:baseline;padding:5px 9px;border-radius:7px;color:var(--ink-soft)}
+.true-row .rank{font-variant-numeric:tabular-nums;font-size:11px;color:var(--ink-faint);width:18px}
+.true-row .tw{font-family:var(--serif);font-size:14.5px;color:var(--ink-soft)}
+.node{position:absolute;font-family:var(--serif);transition:left .6s cubic-bezier(.4,0,.2,1),top .6s cubic-bezier(.4,0,.2,1),opacity .4s,transform .15s;transform:translate(-50%,-50%);cursor:pointer;white-space:nowrap;padding:2px 6px;border-radius:7px}
+.node:hover{transform:translate(-50%,-50%) scale(1.12);z-index:6}
+.node.center{font-size:30px;font-weight:600;cursor:default}
+.node.center:hover{transform:translate(-50%,-50%)}
+.node .ncos{font-size:10px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+svg.links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
+
+@media (max-width:1500px){
+  .A-wrap{grid-template-columns:250px 1fr}
+  .C-wrap{grid-template-columns:230px 1fr 250px}
+  .B-main{grid-template-columns:1fr 280px}
+}
+@media (max-width:1100px){
+  .A-wrap,.C-wrap,.B-main{grid-template-columns:1fr;overflow:auto}
+  .pca-box{min-height:360px}
+  .C-stage{min-height:440px}
+  #tray{display:none}
+}
+/* desktop: contain the mode within the viewport — dense columns scroll internally, the page itself does not */
+@media (min-width:1101px){
+  .app{height:100%;overflow:hidden}
+  .B-side{overflow:auto;padding-right:4px}
+}
+</style>
+</head>
+<body>
+<div id="boot">loading the geometry…</div>
+
+<div class="app" hidden>
+  <header class="top">
+    <h1 class="serif">Embedding Playground</h1>
+    <span class="sub">Meaning is geometry. “Close” in that geometry is why paraphrasing a prompt changes the answer. <span class="muted">— 500 words from GloVe, flattened for display.</span></span>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-mode="A" aria-selected="true"><span class="k">A</span>How close are these?</button>
+    <button role="tab" data-mode="B" aria-selected="false"><span class="k">B</span>Word math</button>
+    <button role="tab" data-mode="C" aria-selected="false"><span class="k">C</span>What’s near this word?</button>
+  </nav>
+
+  <main>
+    <!-- ============================ MODE A ============================ -->
+    <section class="mode active" data-mode="A">
+      <div class="mode-head">
+        <h2 class="serif">Cosine grid</h2>
+        <span class="q">What does “close in the geometry” actually mean?</span>
+      </div>
+      <div class="A-wrap">
+        <div class="A-rail">
+          <div class="scn-group" id="A-scenarios"></div>
+          <div class="palette">
+            <div class="scn-label" style="margin-top:0">Build your own</div>
+            <input class="pal-search" id="A-search" placeholder="filter words…" />
+            <div class="pal-filters" id="A-filters"></div>
+            <div class="pal-list" id="A-pallist"></div>
+          </div>
+          <div>
+            <div class="scn-label">Selected words <span class="muted tiny" id="A-count"></span></div>
+            <div class="selected-tray" id="A-selected"></div>
+            <button class="btn tiny" id="A-clear" style="margin-top:8px">clear</button>
+          </div>
+        </div>
+        <div class="A-stage">
+          <div class="A-readout" id="A-readout">
+            <span class="w" id="A-ro-1"></span><span class="op">·</span><span class="w" id="A-ro-2"></span>
+            <span class="v num" id="A-ro-v"></span>
+          </div>
+          <div class="A-grid-scroll"><div class="grid" id="A-grid"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ MODE B ============================ -->
+    <section class="mode" data-mode="B">
+      <div class="mode-head">
+        <h2 class="serif">Word math</h2>
+        <span class="q">Is this geometry actually computing something, or is “closeness” just suggestive?</span>
+      </div>
+      <div class="B-wrap">
+        <div class="equation" id="B-equation">
+          <div class="eq-slot" data-slot="a"><span class="placeholder">A</span></div>
+          <span class="eq-op">−</span>
+          <div class="eq-slot" data-slot="b"><span class="placeholder">B</span></div>
+          <span class="eq-op">+</span>
+          <div class="eq-slot" data-slot="c"><span class="placeholder">C</span></div>
+          <span class="eq-op">=</span>
+          <div class="eq-slot result" id="B-result"><span class="placeholder">?</span></div>
+        </div>
+        <div class="B-main">
+          <div class="pca-box" id="B-pca">
+            <div class="pca-note">A 2D flattening of the actual 300-dimensional math. The math is exact; the picture is approximate.</div>
+          </div>
+          <div class="B-side">
+            <div class="scn-label" style="margin:0">Nearest matches in the lexicon</div>
+            <div class="results-list" id="B-results"><div class="muted tiny">Fill the three slots, or pick a scenario below.</div></div>
+            <div class="bias-note" id="B-biasnote" hidden></div>
+            <div class="scn-label">Try a scenario</div>
+            <div class="B-scn" id="B-scenarios"></div>
+            <div>
+              <input class="pal-search" id="B-search" placeholder="type a word to fill the armed slot…" list="B-datalist" />
+              <datalist id="B-datalist"></datalist>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ MODE C ============================ -->
+    <section class="mode" data-mode="C">
+      <div class="mode-head">
+        <h2 class="serif">Neighborhood explorer</h2>
+        <span class="q">If you give me a word, what’s the model’s sense of what it’s like?</span>
+      </div>
+      <div class="C-wrap">
+        <div class="C-rail">
+          <div class="scn-group" id="C-scenarios"></div>
+          <div class="palette">
+            <div class="scn-label" style="margin-top:0">Any word</div>
+            <input class="pal-search" id="C-search" placeholder="pick a word…" list="C-datalist" />
+            <datalist id="C-datalist"></datalist>
+            <div class="muted tiny" style="margin-top:8px">Click any orbiting word to walk there.</div>
+          </div>
+        </div>
+        <div class="C-stage" id="C-stage">
+          <svg class="links" id="C-links"></svg>
+        </div>
+        <div class="C-side">
+          <h4>Real nearest neighbors</h4>
+          <div class="ctx-note">from the full 400K-word space — context, not interactive</div>
+          <div class="true-list" id="C-true"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="chrome">
+    <span id="legend" style="display:flex;gap:10px;flex-wrap:wrap"></span>
+    <span style="flex:1"></span>
+    <span><b>Honest about the picture:</b> any 2D layout is a lie of compression — 300 dimensions flattened. Nearest-neighbor <i>within these 500 words</i> is not nearest in the full geometry.</span>
+  </footer>
+</div>
+
+<div id="tray" hidden>
+  <h4>Compare tray</h4>
+  <div class="tray-items" id="tray-items"><span class="tray-empty">drag words here…</span></div>
+  <button class="btn tiny" id="tray-send" style="margin-top:10px;width:100%" disabled>send to grid →</button>
+</div>
+
+<script src="embeddings.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

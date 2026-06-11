@@ -1,0 +1,12 @@
+# raw GloVe source (~1.9 GB) — download per README, never commit
+data/
+
+# internal session docs — kept local on purpose
+embedding_playground_prd.md
+FACILITATOR.md
+CLUSTER_REVIEW.md
+
+# local tooling
+.claude/
+.DS_Store
+__pycache__/

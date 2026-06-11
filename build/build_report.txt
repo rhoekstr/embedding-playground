@@ -1,0 +1,85 @@
+Lexicon size (pre-filter): 492 words
+
+Lexicon words present in GloVe: 492
+All lexicon words present in GloVe.
+
+Cluster sizes (post-filter):
+  c1_universal: 116
+  c2_kinship: 67
+  c3_geography: 57
+  c4_pm_dol: 153
+  c5_bias: 69
+  c6_polysemy: 30
+
+============================================================
+ANALOGY VERIFICATION (nearest within the 500-word slice)
+============================================================
+[PASS          ] king         king-man+woman -> queen
+                 top5: queen(0.67), princess(0.54), daughter(0.50), mother(0.50), prince(0.47)
+                 expected: queen
+[PASS          ] capital      paris-france+japan -> tokyo
+                 top5: tokyo(0.82), asia(0.44), beijing(0.43), moscow(0.38), london(0.38)
+                 expected: tokyo
+[PASS          ] grammar      bigger-big+small -> smaller
+                 top5: smaller(0.77), large(0.58), scale(0.37), cost(0.36), capacity(0.34)
+                 expected: smaller
+[PASS          ] pmc_worker   worker-labor+employment -> employee
+                 top5: employee(0.61), job(0.47), employer(0.47), hiring(0.44), benefits(0.42)
+                 expected: employee
+[PASS          ] pmc_pay      salary-employee+employer -> wage
+                 top5: wage(0.53), pension(0.46), minimum(0.40), retirement(0.39), monthly(0.38)
+                 expected: wage
+[PASS          ] bias_doctor  doctor-man+woman -> nurse
+                 top5: nurse(0.61), dentist(0.52), surgeon(0.50), mother(0.49), her(0.48)
+                 expected: nurse
+[PASS          ] bias_prog    programmer-man+woman -> designer
+                 top5: designer(0.39), technician(0.38), homemaker(0.37), librarian(0.37), researcher(0.33)
+                 expected: designer
+[PASS          ] morphology   walking-walk+run -> running
+                 top5: running(0.71), well(0.43), state(0.36), he(0.36), job(0.35)
+                 expected: running
+[OPEN          ] pmc_measure  measure-quarterly+annual -> plan
+                 top5: plan(0.43), minimum(0.42), initiative(0.38), benefits(0.38), budget(0.37)
+[OPEN          ] pmc_plan     milestone-project+program -> achievement
+                 top5: achievement(0.41), progress(0.34), benefits(0.27), nation(0.27), monthly(0.26)
+[PASS          ] pmc_mgmt     management-manager+worker -> employee
+                 top5: employee(0.58), benefits(0.46), labor(0.44), productivity(0.43), employer(0.43)
+                 expected: employee
+[PASS          ] pmc_budget   budget-fiscal+annual -> monthly
+                 top5: monthly(0.53), weekly(0.45), schedule(0.39), cost(0.36), salary(0.36)
+                 expected: monthly
+[PASS          ] pmc_fund     funding-grant+budget -> fiscal
+                 top5: fiscal(0.56), cost(0.46), plan(0.44), current(0.39), appropriation(0.39)
+                 expected: fiscal
+[PASS          ] queen_king   queen-woman+man -> king
+                 top5: king(0.66), prince(0.49), brother(0.44), princess(0.39), uncle(0.38)
+                 expected: king
+[PASS          ] father_mom   father-man+woman -> mother
+                 top5: mother(0.83), daughter(0.79), husband(0.73), wife(0.72), grandmother(0.70)
+                 expected: mother
+[PASS          ] uncle_aunt   uncle-man+woman -> aunt
+                 top5: aunt(0.74), niece(0.71), grandmother(0.71), daughter(0.67), mother(0.66)
+                 expected: aunt
+[PASS          ] prince       prince-man+woman -> princess
+                 top5: princess(0.70), queen(0.53), daughter(0.52), wife(0.48), mother(0.46)
+                 expected: princess
+[PASS          ] cap_germany  berlin-germany+france -> paris
+                 top5: paris(0.80), london(0.46), rome(0.44), moscow(0.43), madrid(0.41)
+                 expected: paris
+[PASS          ] cap_italy    rome-italy+spain -> madrid
+                 top5: madrid(0.63), paris(0.46), lisbon(0.44), athens(0.43), stockholm(0.42)
+                 expected: madrid
+[PASS          ] boy_girl     boy-man+woman -> girl
+                 top5: girl(0.84), girls(0.64), mother(0.64), child(0.63), daughter(0.60)
+                 expected: girl
+
+Verified/usable analogies: 20 (target >= 15)
+
+FAILURE-EXAMPLE candidates (for the Mode B 'failure' button):
+  fail_clusters  paris-france+happy -> excited   [excited(0.50), pretty(0.48), sad(0.46), love(0.43), good(0.43)]
+  fail_animal    king-man+dog -> cat   [cat(0.42), queen(0.40), lion(0.40), prince(0.34), horse(0.32)]
+  fail_pmc       measure-data+love -> friend   [friend(0.39), joy(0.38), good(0.37), him(0.36), her(0.35)]
+
+Wrote /Users/rhoekstr/Desktop/Code/Embeddings/embeddings.json (898 KB raw; ~314 KB gzipped est.)
+  words: 492  vectors: 1968x300 int8
+Total time: 13.8s
