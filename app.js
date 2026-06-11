@@ -760,12 +760,12 @@ const ModeC = {
         // this true neighbor is in the shipped 492 — let the user walk there
         const tw = el("button", "tw tw-link", w);
         tw.type = "button"; tw.style.color = clusterVar(w, "d");
-        tw.title = "in this tool’s 492 words — click to explore";
+        tw.title = `in this tool’s ${WORDS.length} words — click to explore`;
         tw.addEventListener("click", () => this.setCenter(w, true));
         row.append(tw);
       } else {
         const tw = el("span", "tw", w);
-        tw.title = "not in this tool’s 492-word slice";
+        tw.title = `not in this tool’s ${WORDS.length}-word slice`;
         row.append(tw);
       }
       tl.append(row);
@@ -876,6 +876,7 @@ const Tray = {
 /* ===================================================== run bootstrap */
 document.getElementById("boot").remove();
 document.querySelector(".app").hidden = false;
+$$(".wc").forEach(e => { e.textContent = WORDS.length; }); // live word count
 buildLegend();
 setupTabs();
 ModeA.init();

@@ -53,6 +53,15 @@ CLUSTERS = {
         # 2026-06-11 relationship-mining additions (true-neighbor stitch words)
         "biking", "bright", "dark", "flour", "butter", "huge", "pace", "quiet",
         "shoulder",
+        # 2026-06-11 deep-mining round 2 (target ~800 lexicon)
+        "chocolate", "cream", "vegetables", "beef", "peanut", "pepper", "salmon",
+        "wheat", "corn", "pork", "juice", "chicken", "mango", "coconut", "dairy",
+        "goat", "rat", "squirrel", "leopard", "cattle", "coyote", "elk", "pet",
+        "animal", "wrist", "elbow", "ankle", "knee", "thigh", "brain", "nose",
+        "warm", "mist", "temperature", "hurricane", "snowfall", "cool",
+        "winter", "summer", "autumn", "scared", "worry", "delight", "glad",
+        "lavender", "massive", "enormous", "kitchen",
+        "football", "soccer", "ball", "game", "team", "beach",
     ],
     # ------------------------------------------------------------------ c2
     "c2_kinship": [
@@ -68,6 +77,11 @@ CLUSTERS = {
         "spouse", "ancestor", "generation",
         # 2026-06-11 relationship-mining additions
         "newborn",
+        # 2026-06-11 deep-mining round 2
+        "girlfriend", "boyfriend", "mom", "dad", "married", "wedding",
+        "pregnant", "teen", "junior", "youngster", "offspring", "descendant",
+        "couple", "divorced", "monarch", "throne", "crown", "royal", "duke",
+        "duchess", "empress", "paternal",
     ],
     # ------------------------------------------------------------------ c3
     "c3_geography": [
@@ -86,6 +100,13 @@ CLUSTERS = {
         "country", "city", "capital", "region", "border",
         # 2026-06-11 relationship-mining additions (capital/country pairs kept whole)
         "prague", "belgium", "brussels", "hungary", "budapest",
+        # 2026-06-11 deep-mining round 2
+        "romania", "bulgaria", "istanbul", "switzerland", "britain", "barcelona",
+        "slovakia", "wales", "montreal", "argentina", "munich", "estonia",
+        "lithuania", "scotland", "ukraine", "kiev", "frankfurt", "cyprus",
+        "seoul", "korea", "shanghai", "luxembourg", "iceland", "australia",
+        "venezuela", "taiwan", "toronto", "latvia", "colombia", "mumbai",
+        "osaka", "taipei", "zurich", "croatia", "milan", "peru",
     ],
     # ------------------------------------------------------------------ c4
     # [REVIEW: Robert] Performance-management + DOL vocabulary.
@@ -124,6 +145,15 @@ CLUSTERS = {
         "government", "transparency", "implementation", "yearly", "assess",
         "index", "percent", "pay", "spending", "investment", "deputy",
         "legislation", "provision", "factory", "production",
+        # 2026-06-11 deep-mining round 2
+        "development", "growth", "inflation", "deficit", "reform", "law",
+        "amendment", "regulatory", "payment", "earnings", "expenditure",
+        "financing", "logistics", "internship", "negotiation", "supervision",
+        "protection", "ministry", "maximum", "eligible", "comply", "implement",
+        "examine", "improve", "achieve", "proposal", "requirement",
+        "information", "education", "business", "construction", "manufacturing",
+        "exports", "competitiveness", "accreditation", "timetable", "jobless",
+        "efficacy", "accomplishment", "economic",
     ],
     # ------------------------------------------------------------------ c5
     # [REVIEW: Robert] Bias-demonstration set. No slurs, no named ethnicities or
@@ -148,6 +178,17 @@ CLUSTERS = {
         # 2026-06-11 relationship-mining additions — REVIEW: bias cluster is hand-curated
         "assistant", "bookkeeper", "housekeeper", "waitress", "pharmacist",
         "bartender", "welder", "chief", "charming", "businessman", "businesswoman",
+        # 2026-06-11 deep-mining round 2 — REVIEW (bias cluster).
+        # "physician" is a DESIGNED demo-break: doctor-man+woman now lands in a
+        # dead heat between physician and nurse — discussion fodder, on purpose.
+        "physician", "waiter", "entrepreneur", "schoolteacher", "chairman",
+        "chairwoman", "attorney", "housewife", "physicist", "psychologist",
+        "psychiatrist", "pediatrician", "stylist", "sculptor", "singer",
+        "songwriter", "builder", "instructor", "blacksmith", "painter",
+        "financier", "consultant", "auditor", "policeman", "policewoman",
+        "apprentice", "advisor", "practitioner", "composer", "coach",
+        "biologist", "fireman", "coordinator", "politician", "lecturer",
+        "elegant", "polite",
     ],
     # ------------------------------------------------------------------ c6
     "c6_polysemy": [
@@ -157,6 +198,10 @@ CLUSTERS = {
         "watch", "wave", "well", "yard", "novel", "mint",
         # 2026-06-11 relationship-mining additions
         "reasonable", "bill",
+        # 2026-06-11 deep-mining round 2 (classic two-sense traps)
+        "band", "diamond", "lemon", "pop", "appeal", "interest", "charge",
+        "draft", "suit", "check", "cabinet", "organ", "pupil", "bass",
+        "crane", "bolt", "jam", "racket", "pitcher",
     ],
 }
 
@@ -184,7 +229,7 @@ ANALOGY_CANDIDATES = [
     {"id": "grammar",     "headline": True, "kind": "grammar",    "label": "bigger - big + small",       "a": "bigger",     "b": "big",       "c": "small",      "expected": "smaller", "teaches": "Geometry encodes grammar, not just meaning."},
     {"id": "pmc_worker",  "headline": True, "kind": "pmc",        "label": "worker - labor + employer",  "a": "worker",     "b": "labor",     "c": "employer",   "expected": "employee","teaches": "PMC analogy payoff - the same machinery applied to DOL vocabulary. Labor-side word for a person, shifted to the employer frame."},
     {"id": "pmc_eval",    "headline": True, "kind": "pmc",        "label": "evaluation - evaluate + monitor","a": "evaluation","b": "evaluate","c": "monitor",    "expected": "monitoring","teaches": "Second PMC analogy: the geometry encodes the grammar of PM vocabulary itself (evaluate:evaluation :: monitor:monitoring)."},
-    {"id": "bias_doctor", "headline": True, "kind": "bias",       "label": "doctor - man + woman",       "a": "doctor",     "b": "man",       "c": "woman",      "expected": "nurse",   "teaches": "The bias demo (PRD section 7). Geometry encoding learned prejudice."},
+    {"id": "bias_doctor", "headline": True, "kind": "bias",       "label": "doctor - man + woman",       "a": "doctor",     "b": "man",       "c": "woman",      "expected": None,      "teaches": "The bias demo (PRD section 7) — now with the lexicon including 'physician', the math lands in a dead heat between the gender-neutral synonym and the stereotyped role. Read the numbers; that closeness IS the lesson."},
     {"id": "bias_ceo",    "headline": True, "kind": "bias",       "label": "ceo - man + woman",          "a": "ceo",        "b": "man",       "c": "woman",      "expected": "executive","teaches": "Second bias scenario. The gender shift demotes the chief title to the generic one. One result is anecdote; two from different roles is data."},
     {"id": "morphology",  "headline": True, "kind": "morphology", "label": "walking - walk + run",       "a": "walking",    "b": "walk",      "c": "run",        "expected": "running", "teaches": "Verb conjugation as geometry; lighter morphology scenario."},
 

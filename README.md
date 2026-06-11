@@ -18,14 +18,14 @@ Three modes, one question each:
   senses collapsed into one vector — the limitation that motivated contextual
   embeddings.
 
-Everything runs client-side from a curated 492-word slice of GloVe. No backend,
+Everything runs client-side from a curated ~750-word slice of GloVe. No backend,
 no logging, no network calls after load. The single offline file in
 [`dist/`](dist/) is the same tool and opens directly from disk.
 
 ## Honest limitations (shown in the tool, repeated here)
 
 The 2D pictures are flattenings of 300-dimensional vectors — the math is exact,
-the pictures are approximate. "Nearest neighbor within 492 words" is not nearest
+the pictures are approximate. "Nearest neighbor within the slice" is not nearest
 in the full 400K-word space, so each word's true top neighbors from the full
 space are shown as context. The bias demonstrations are descriptive: the
 geometry reflects how words co-occur in human writing.

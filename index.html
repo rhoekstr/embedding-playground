@@ -272,8 +272,9 @@ footer.chrome b{color:var(--ink-soft);font-weight:600}
 .true-row{display:flex;gap:9px;align-items:baseline;padding:5px 9px;border-radius:7px;color:var(--ink-soft)}
 .true-row .rank{font-variant-numeric:tabular-nums;font-size:11px;color:var(--ink-faint);width:18px}
 .true-row .tw{font-family:var(--serif);font-size:14.5px;color:var(--ink-soft)}
-.true-row button.tw-link{background:none;border:none;padding:0;cursor:pointer;text-align:left}
-.true-row button.tw-link:hover,.true-row button.tw-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
+/* in-corpus true neighbors are chips, matching the palette's "boxed = clickable" language */
+.true-row button.tw-link{background:#fff;border:1px solid var(--line-strong);border-radius:7px;padding:1px 8px;cursor:pointer;text-align:left;transition:.1s}
+.true-row button.tw-link:hover,.true-row button.tw-link:focus-visible{border-color:var(--ink-faint);box-shadow:0 1px 3px rgba(40,36,30,.12)}
 .node{position:absolute;font-family:var(--serif);transition:left .6s cubic-bezier(.4,0,.2,1),top .6s cubic-bezier(.4,0,.2,1),opacity .4s,transform .15s;transform:translate(-50%,-50%);cursor:pointer;white-space:nowrap;padding:2px 6px;border-radius:7px}
 .node:hover{transform:translate(-50%,-50%) scale(1.12);z-index:6}
 .node.center{font-size:30px;font-weight:600;cursor:default}
@@ -306,7 +307,7 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
 <div class="app" hidden>
   <header class="top">
     <h1 class="serif">Embedding Playground</h1>
-    <span class="sub">Meaning is geometry. “Close” in that geometry is why paraphrasing a prompt changes the answer. <span class="muted">— 500 words from GloVe, flattened for display.</span></span>
+    <span class="sub">Meaning is geometry. “Close” in that geometry is why paraphrasing a prompt changes the answer. <span class="muted">— <span class="wc">500</span> words from GloVe, flattened for display.</span></span>
     <a class="home" href="https://www.awrylabs.com" target="_blank" rel="noreferrer">made by awry<strong>Labs</strong></a>
   </header>
 
@@ -404,7 +405,7 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
         </div>
         <div class="C-side">
           <h4>Real nearest neighbors</h4>
-          <div class="ctx-note">from the full 400K-word space. Colored words are in this tool’s 492 — click to walk there; gray ones aren’t shipped.</div>
+          <div class="ctx-note">from the full 400K-word space. Boxed words are in this tool’s <span class="wc">500</span> — click to walk there; gray ones aren’t shipped.</div>
           <div class="true-list" id="C-true"></div>
         </div>
       </div>
@@ -414,7 +415,7 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
   <footer class="chrome">
     <span id="legend" style="display:flex;gap:10px;flex-wrap:wrap"></span>
     <span style="flex:1"></span>
-    <span><b>Honest about the picture:</b> any 2D layout is a lie of compression — 300 dimensions flattened. Nearest-neighbor <i>within these 500 words</i> is not nearest in the full geometry.</span>
+    <span><b>Honest about the picture:</b> any 2D layout is a lie of compression — 300 dimensions flattened. Nearest-neighbor <i>within these <span class="wc">500</span> words</i> is not nearest in the full geometry.</span>
   </footer>
 </div>
 
