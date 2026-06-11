@@ -62,6 +62,8 @@ CLUSTERS = {
         "winter", "summer", "autumn", "scared", "worry", "delight", "glad",
         "lavender", "massive", "enormous", "kitchen",
         "football", "soccer", "ball", "game", "team", "beach",
+        # 2026-06-11 Mode D sense anchors
+        "tree", "flower", "garden", "river", "shore", "music",
     ],
     # ------------------------------------------------------------------ c2
     "c2_kinship": [
@@ -82,6 +84,8 @@ CLUSTERS = {
         "pregnant", "teen", "junior", "youngster", "offspring", "descendant",
         "couple", "divorced", "monarch", "throne", "crown", "royal", "duke",
         "duchess", "empress", "paternal",
+        # 2026-06-11 Mode D sense anchors
+        "student",
     ],
     # ------------------------------------------------------------------ c3
     "c3_geography": [
@@ -265,4 +269,40 @@ FAILURE_CANDIDATES = [
      "teaches": "A familiar analogy frame breaks when the third term is from a far-off cluster."},
     {"id": "fail_pmc",      "a": "measure", "b": "data",   "c": "love",
      "teaches": "Vocabulary arithmetic across unrelated domains produces an incoherent result."},
+]
+
+
+# ---------------------------------------------------------------------------
+# Mode D — "Which meaning wins?": curated two-sense words with in-lexicon
+# anchor sets per sense. The app projects the word onto the axis between the
+# two sense centroids; its position shows which usage dominates the vector.
+# Every anchor must be a lexicon word (preprocess validates).
+SENSES = [
+    {"word": "measure",
+     "a": {"label": "the KPI", "anchors": ["metric", "indicator", "benchmark", "baseline", "gauge"]},
+     "b": {"label": "the legislative act", "anchors": ["legislation", "bill", "provision", "amendment", "proposal"]}},
+    {"word": "plant",
+     "a": {"label": "the factory", "anchors": ["factory", "production", "manufacturing", "industry"]},
+     "b": {"label": "the living thing", "anchors": ["tree", "flower", "garden", "fruit"]}},
+    {"word": "bank",
+     "a": {"label": "the financial one", "anchors": ["investment", "banker", "payment", "financing"]},
+     "b": {"label": "the riverside", "anchors": ["river", "shore", "beach"]}},
+    {"word": "court",
+     "a": {"label": "the legal one", "anchors": ["judge", "law", "appeal", "attorney"]},
+     "b": {"label": "the royal one", "anchors": ["king", "queen", "royal", "throne"]}},
+    {"word": "bat",
+     "a": {"label": "the animal", "anchors": ["animal", "bird", "mouse", "wolf"]},
+     "b": {"label": "the baseball one", "anchors": ["pitcher", "ball", "game", "team"]}},
+    {"word": "organ",
+     "a": {"label": "the instrument", "anchors": ["music", "band", "composer", "singer"]},
+     "b": {"label": "the body part", "anchors": ["brain", "heart", "ear", "eye"]}},
+    {"word": "pupil",
+     "a": {"label": "the student", "anchors": ["student", "teacher", "instructor", "lecturer"]},
+     "b": {"label": "the eye", "anchors": ["eye", "ear", "nose", "brain"]}},
+    {"word": "check",
+     "a": {"label": "the payment", "anchors": ["payment", "bank", "salary", "earnings"]},
+     "b": {"label": "the verification", "anchors": ["review", "audit", "inspection", "monitor"]}},
+    {"word": "crane",
+     "a": {"label": "the bird", "anchors": ["bird", "animal", "fish"]},
+     "b": {"label": "the machine", "anchors": ["construction", "factory", "manufacturing"]}},
 ]

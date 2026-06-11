@@ -1,11 +1,11 @@
-Lexicon size (pre-filter): 743 words
+Lexicon size (pre-filter): 750 words
 
-Lexicon words present in GloVe: 743
+Lexicon words present in GloVe: 750
 All lexicon words present in GloVe.
 
 Cluster sizes (post-filter):
-  c1_universal: 179
-  c2_kinship: 90
+  c1_universal: 185
+  c2_kinship: 91
   c3_geography: 98
   c4_pm_dol: 208
   c5_bias: 117
@@ -88,6 +88,17 @@ FAILURE-EXAMPLE candidates (for the Mode B 'failure' button):
   fail_animal    king-man+dog -> cat   [cat(0.42), pet(0.40), queen(0.40), lion(0.40), prince(0.34)]
   fail_pmc       measure-data+love -> bill   [bill(0.43), friend(0.39), joy(0.38), good(0.37), him(0.36)]
 
-Wrote /Users/rhoekstr/Desktop/Code/Embeddings/embeddings.json (1355 KB raw; ~474 KB gzipped est.)
-  words: 743  vectors: 743x300 float32
-Total time: 13.8s
+SENSE DOMINANCE (Mode D) — mean cosine of word to each anchor set:
+  measure    the KPI                0.267 ( 32%)  vs  the legislative act    0.573 ( 68%)
+  plant      the factory            0.443 ( 56%)  vs  the living thing       0.347 ( 44%)
+  bank       the financial one      0.394 ( 62%)  vs  the riverside          0.237 ( 38%)
+  court      the legal one          0.603 ( 69%)  vs  the royal one          0.268 ( 31%)
+  bat        the animal             0.203 ( 36%)  vs  the baseball one       0.354 ( 64%)
+  organ      the instrument         0.254 ( 49%)  vs  the body part          0.268 ( 51%)
+  pupil      the student            0.367 ( 70%)  vs  the eye                0.155 ( 30%)
+  check      the payment            0.293 ( 43%)  vs  the verification       0.396 ( 57%)
+  crane      the bird               0.210 ( 54%)  vs  the machine            0.182 ( 46%)
+
+Wrote /Users/rhoekstr/Desktop/Code/Embeddings/embeddings.json (1370 KB raw; ~479 KB gzipped est.)
+  words: 750  vectors: 750x300 float32
+Total time: 14.5s

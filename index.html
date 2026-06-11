@@ -264,6 +264,18 @@ footer.chrome b{color:var(--ink-soft);font-weight:600}
 /* ===================================================== MODE C: neighborhood */
 .C-wrap{display:grid;grid-template-columns:260px 1fr 290px;gap:22px;height:100%}
 .C-rail{display:flex;flex-direction:column;gap:14px;overflow:auto}
+.D-wrap{display:grid;grid-template-columns:260px 1fr;gap:22px;height:100%}
+.D-rail{display:flex;flex-direction:column;gap:14px;overflow:auto}
+.D-stage{position:relative;border:1px solid var(--line);border-radius:12px;background:radial-gradient(circle at 50% 42%,#fcfaf4,#f3ecdf);overflow:hidden;min-width:0}
+.d-node{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--serif)}
+.d-anchor{font-size:14.5px;padding:1px 6px;border-radius:6px;cursor:default}
+.d-word{font-size:26px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.75);padding:2px 10px;border-radius:8px;box-shadow:var(--shadow)}
+.d-endlab{position:absolute;font-family:var(--sans);font-size:13px;color:var(--ink-soft);text-align:center;transform:translateX(-50%)}
+.d-endlab b{display:block;font-size:14.5px;color:var(--ink)}
+.d-endlab .mean{font-variant-numeric:tabular-nums;color:var(--ink-faint);font-size:12px}
+.d-bar{position:absolute;left:50%;transform:translateX(-50%);height:14px;border-radius:7px;overflow:hidden;display:flex;border:1px solid var(--line-strong);background:#fff}
+.d-bar i{display:block;height:100%}
+.d-barlab{position:absolute;transform:translateX(-50%);font-family:var(--sans);font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
 .C-stage{position:relative;border:1px solid var(--line);border-radius:12px;background:radial-gradient(circle at 50% 50%,#fcfaf4,#f3ecdf);overflow:hidden;min-width:0}
 .C-side{display:flex;flex-direction:column;gap:10px;min-height:0}
 .C-side h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);font-weight:600}
@@ -289,9 +301,10 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
   .B-main{grid-template-columns:1fr 280px}
 }
 @media (max-width:1100px){
-  .A-wrap,.C-wrap,.B-main{grid-template-columns:1fr;overflow:auto}
+  .A-wrap,.C-wrap,.B-main,.D-wrap{grid-template-columns:1fr;overflow:auto}
   .pca-box{min-height:360px}
   .C-stage{min-height:440px}
+  .D-stage{min-height:420px}
   #tray{display:none}
 }
 /* desktop: contain the mode within the viewport — dense columns scroll internally, the page itself does not */
@@ -315,6 +328,7 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
     <button role="tab" data-mode="A" aria-selected="true"><span class="k">A</span>How close are these?</button>
     <button role="tab" data-mode="B" aria-selected="false"><span class="k">B</span>Word math</button>
     <button role="tab" data-mode="C" aria-selected="false"><span class="k">C</span>What’s near this word?</button>
+    <button role="tab" data-mode="D" aria-selected="false"><span class="k">D</span>Which meaning wins?</button>
   </nav>
 
   <main>
@@ -407,6 +421,22 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
           <h4>Real nearest neighbors</h4>
           <div class="ctx-note">from the full 400K-word space. Boxed words are in this tool’s <span class="wc">500</span> — click to walk there; gray ones aren’t shipped.</div>
           <div class="true-list" id="C-true"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mode" data-mode="D">
+      <div class="mode-head">
+        <h2 class="serif">One word, two meanings</h2>
+        <span class="q">When a word has two senses, which one does the geometry remember?</span>
+      </div>
+      <div class="D-wrap">
+        <div class="D-rail">
+          <div class="scn-group" id="D-scenarios"></div>
+          <div class="muted tiny" style="padding:0 2px">Each word here has two unrelated senses but only <em>one</em> vector. Its position on the axis shows which sense the training text fed more.</div>
+        </div>
+        <div class="D-stage" id="D-stage">
+          <div class="pca-note">One vector serves both senses. Word position is its true projection onto the axis between the two sense-centroids; the bar splits the mean cosine pull. Hover an anchor for its exact similarity.</div>
         </div>
       </div>
     </section>

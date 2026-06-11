@@ -228,6 +228,7 @@ function setupTabs() {
       if (mode === "A") ModeA.onShow();
       if (mode === "B") ModeB.onShow();
       if (mode === "C") ModeC.onShow();
+      if (mode === "D") ModeD.onShow();
     });
   });
 }
@@ -873,6 +874,155 @@ const Tray = {
   },
 };
 
+/* ===================================================== Mode D: which meaning wins */
+const ModeD = {
+  current: null,
+  init() {
+    const g = $("#D-scenarios");
+    g.append(el("div", "scn-label", "ONE WORD, TWO SENSES"));
+    DATA.senses.forEach(s => {
+      const b = el("button", "scn");
+      b.append(el("strong", null, `“${s.word}”`));
+      b.append(el("span", "scn-teach", `${s.a.label}  ·  ${s.b.label}`));
+      b.addEventListener("click", () => this.load(s, true));
+      g.append(b);
+    });
+    window.addEventListener("resize", () => {
+      if ($('.mode[data-mode="D"]').classList.contains("active") && this.current) this.render(false);
+    });
+  },
+  onShow() { if (this.current) this.render(false); else this.load(DATA.senses[0], true); },
+  load(s, animate) { this.current = s; this.render(animate); },
+
+  render(animate) {
+    const s = this.current, stage = $("#D-stage");
+    stage.querySelectorAll(".d-node,.d-endlab,.d-bar,.d-barlab,svg.d-svg").forEach(n => n.remove());
+    const W = stage.clientWidth, H = stage.clientHeight;
+    if (W < 60 || H < 60) return;
+    const wv = vec(s.word);
+
+    // sense centroids, the axis between them, and the word's true projection
+    const mkCentroid = anchors => {
+      const c = new Float32Array(DIM);
+      anchors.forEach(a => { const v = vec(a); for (let i = 0; i < DIM; i++) c[i] += v[i]; });
+      let n = 0; for (let i = 0; i < DIM; i++) n += c[i] * c[i];
+      n = Math.sqrt(n) || 1; for (let i = 0; i < DIM; i++) c[i] /= n;
+      return c;
+    };
+    const sides = ["a", "b"].map(k => {
+      const sd = s[k];
+      const mean = sd.anchors.reduce((t, a) => t + dot(wv, vec(a)), 0) / sd.anchors.length;
+      return { label: sd.label, anchors: sd.anchors, centroid: mkCentroid(sd.anchors), mean };
+    });
+    const axis = new Float32Array(DIM);
+    for (let i = 0; i < DIM; i++) axis[i] = sides[0].centroid[i] - sides[1].centroid[i];
+    let an = 0; for (let i = 0; i < DIM; i++) an += axis[i] * axis[i];
+    an = Math.sqrt(an) || 1; for (let i = 0; i < DIM; i++) axis[i] /= an;
+    const proj = v => dot(v, axis);
+
+    const pts = [];
+    sides.forEach((sd, si) => sd.anchors.forEach(a => pts.push({ w: a, side: si, p: proj(vec(a)) })));
+    const pw = proj(wv);
+    const lo = Math.min(...pts.map(o => o.p), pw), hi = Math.max(...pts.map(o => o.p), pw);
+    const padX = 110, axisY = H * 0.5;
+    const X = p => padX + (hi - p) / (hi - lo || 1) * (W - 2 * padX); // side a lands left
+
+    // axis line
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "d-svg");
+    svg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none";
+    stage.append(svg);
+    const axline = document.createElementNS(svg.namespaceURI, "line");
+    axline.setAttribute("x1", 26); axline.setAttribute("y1", axisY);
+    axline.setAttribute("x2", W - 26); axline.setAttribute("y2", axisY);
+    axline.setAttribute("stroke", "var(--line-strong)"); axline.setAttribute("stroke-width", "1.5");
+    svg.append(axline);
+    if (animate) {
+      const len = W - 52;
+      axline.setAttribute("stroke-dasharray", len); axline.setAttribute("stroke-dashoffset", len);
+      axline.style.transition = "stroke-dashoffset .5s ease";
+      requestAnimationFrame(() => axline.setAttribute("stroke-dashoffset", "0"));
+    }
+
+    const appear = (node, delay) => {
+      if (!animate) return;
+      node.style.opacity = "0";
+      node.style.transition = (node.style.transition ? node.style.transition + ", " : "") + "opacity .4s";
+      setTimeout(() => { node.style.opacity = "1"; }, delay);
+    };
+
+    // sense headers at the top corners
+    sides.forEach((sd, si) => {
+      const lab = el("div", "d-endlab");
+      lab.append(el("b", null, sd.label));
+      lab.append(el("span", "mean", `mean cosine ${sd.mean.toFixed(2)}`));
+      lab.style.left = (si === 0 ? padX * 0.9 : W - padX * 0.9) + "px";
+      lab.style.top = "16px"; lab.style.maxWidth = "170px";
+      stage.append(lab); appear(lab, 400);
+    });
+
+    // anchors below the axis, stacked per side by pull strength
+    const rowsUsed = [0, 0];
+    pts.sort((a, b) => Math.abs(b.p) - Math.abs(a.p));
+    pts.forEach((o, k) => {
+      const node = el("div", "d-node d-anchor", o.w);
+      node.style.color = clusterVar(o.w, "d");
+      node.style.left = X(o.p) + "px";
+      node.style.top = (axisY + 32 + rowsUsed[o.side]++ * 25) + "px";
+      node.title = `cosine(${s.word}, ${o.w}) = ${dot(wv, vec(o.w)).toFixed(2)}`;
+      // tick connecting the anchor's row position to its true spot on the axis
+      const tick = document.createElementNS(svg.namespaceURI, "line");
+      tick.setAttribute("x1", X(o.p)); tick.setAttribute("y1", axisY);
+      tick.setAttribute("x2", X(o.p)); tick.setAttribute("y2", axisY + 8);
+      tick.setAttribute("stroke", "var(--line-strong)"); tick.setAttribute("stroke-width", "1");
+      svg.append(tick);
+      stage.append(node);
+      appear(node, 500 + k * 70);
+      if (animate) { tick.style.opacity = "0"; tick.style.transition = "opacity .4s"; setTimeout(() => { tick.style.opacity = "1"; }, 500 + k * 70); }
+    });
+
+    // the word itself: drops in at center, slides to its true projection
+    const wx = X(pw), wordY = axisY - 52;
+    const word = el("div", "d-node d-word serif", s.word);
+    word.style.top = wordY + "px";
+    word.style.left = (animate ? W / 2 : wx) + "px";
+    stage.append(word);
+    const stem = document.createElementNS(svg.namespaceURI, "line");
+    stem.setAttribute("x1", wx); stem.setAttribute("y1", wordY + 22);
+    stem.setAttribute("x2", wx); stem.setAttribute("y2", axisY);
+    stem.setAttribute("stroke", "var(--ink-soft)"); stem.setAttribute("stroke-width", "1.5");
+    stem.setAttribute("stroke-dasharray", "2 3");
+    svg.append(stem);
+    if (animate) {
+      word.style.opacity = "0";
+      word.style.transition = "opacity .4s, left .9s cubic-bezier(.45,.05,.35,1)";
+      stem.style.opacity = "0"; stem.style.transition = "opacity .4s";
+      setTimeout(() => { word.style.opacity = "1"; }, 1250);
+      setTimeout(() => { word.style.left = wx + "px"; }, 1600);
+      setTimeout(() => { stem.style.opacity = "1"; }, 2450);
+    }
+
+    // the pull bar: share of mean-cosine, tug-of-war from 50/50
+    const shareA = sides[0].mean / (sides[0].mean + sides[1].mean || 1);
+    const bar = el("div", "d-bar");
+    bar.style.top = "22px"; bar.style.width = "210px";
+    const segA = el("i"); segA.style.background = "var(--ink-soft)";
+    const segB = el("i"); segB.style.background = "#c9c1ae";
+    segA.style.width = (animate ? 50 : shareA * 100) + "%";
+    segB.style.width = (animate ? 50 : (1 - shareA) * 100) + "%";
+    if (animate) { segA.style.transition = segB.style.transition = "width .7s ease"; }
+    bar.append(segA, segB);
+    stage.append(bar);
+    const labA = el("div", "d-barlab", Math.round(shareA * 100) + "%");
+    const labB = el("div", "d-barlab", Math.round((1 - shareA) * 100) + "%");
+    labA.style.cssText += `top:42px;left:calc(50% - 80px)`;
+    labB.style.cssText += `top:42px;left:calc(50% + 80px)`;
+    stage.append(labA, labB);
+    appear(labA, 2500); appear(labB, 2500);
+    if (animate) setTimeout(() => { segA.style.width = shareA * 100 + "%"; segB.style.width = (1 - shareA) * 100 + "%"; }, 2450);
+  },
+};
+
 /* ===================================================== run bootstrap */
 document.getElementById("boot").remove();
 document.querySelector(".app").hidden = false;
@@ -882,6 +1032,7 @@ setupTabs();
 ModeA.init();
 ModeB.init();
 ModeC.init();
+ModeD.init();
 Tray.init();
 ModeA.loadScenario(A_SCENARIOS[0]);
 ModeB.loadScenario(HEADLINE_ANALOGIES[0]);

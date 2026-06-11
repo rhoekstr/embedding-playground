@@ -26,6 +26,7 @@ from lexicon import (  # noqa: E402
     ANALOGY_CANDIDATES,
     CLUSTERS,
     FAILURE_CANDIDATES,
+    SENSES,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -235,6 +236,26 @@ def main():
             "top5": [{"w": w, "sim": round(s, 4)} for w, s in top],
         })
 
+    # --- 5b. Mode D sense sets: validate anchors, report dominance ---
+    log("", report)
+    log("SENSE DOMINANCE (Mode D) — mean cosine of word to each anchor set:", report)
+    senses_out = []
+    for s in SENSES:
+        w = s["word"]
+        missing_anchor = [x for side in ("a", "b") for x in s[side]["anchors"]
+                          if x not in slice_pos] + ([w] if w not in slice_pos else [])
+        if missing_anchor:
+            sys.exit(f"SENSES['{w}']: not in slice: {missing_anchor}")
+        wv = slice_norm[slice_pos[w]]
+        means = {}
+        for side in ("a", "b"):
+            sims = [float(wv @ slice_norm[slice_pos[x]]) for x in s[side]["anchors"]]
+            means[side] = sum(sims) / len(sims)
+        share_a = means["a"] / (means["a"] + means["b"])
+        log(f"  {w:10s} {s['a']['label']:22s} {means['a']:.3f} ({share_a:4.0%})  vs  "
+            f"{s['b']['label']:22s} {means['b']:.3f} ({1-share_a:4.0%})", report)
+        senses_out.append({"word": w, "a": s["a"], "b": s["b"]})
+
     # --- 6. emit embeddings.json ---
     # Vectors as one base64 little-endian Float32Array (row-major, one row per
     # word in 'words' order). Full GloVe precision: the slice is only ~500 words,
@@ -263,6 +284,7 @@ def main():
         "true_neighbors": neighbors_out,
         "curated_analogies": verified,
         "failure_candidates": failure_eval,
+        "senses": senses_out,
     }
 
     with open(OUT_PATH, "w", encoding="utf-8") as f:
