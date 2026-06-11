@@ -67,6 +67,9 @@ header.top h1{
   letter-spacing:.2px;
 }
 header.top .sub{color:var(--ink-soft);font-size:14px;max-width:680px}
+header.top .home{margin-left:auto;font-size:13px;color:var(--ink-faint);text-decoration:none;white-space:nowrap}
+header.top .home strong{font-weight:700;color:var(--ink-soft)}
+header.top .home:hover,header.top .home:hover strong{color:var(--ink);text-decoration:underline}
 
 /* tab bar */
 nav.tabs{display:flex;gap:6px;margin:20px 0 8px}
@@ -302,6 +305,7 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
   <header class="top">
     <h1 class="serif">Embedding Playground</h1>
     <span class="sub">Meaning is geometry. “Close” in that geometry is why paraphrasing a prompt changes the answer. <span class="muted">— 500 words from GloVe, flattened for display.</span></span>
+    <a class="home" href="https://www.awrylabs.com" target="_blank" rel="noreferrer">made by awry<strong>Labs</strong></a>
   </header>
 
   <nav class="tabs" role="tablist">
