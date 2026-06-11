@@ -90,6 +90,35 @@ function fitPCA(points) {
   };
 }
 
+/* label declutter: estimate label boxes, push overlapping pairs apart.
+   items: {x, y, w, h, weight} — weight 0 pins an item (math anchors, captions);
+   higher weight moves more. Clamps movable items into bounds each pass. */
+const _mctx = document.createElement("canvas").getContext("2d");
+function textWidth(t, px) { _mctx.font = px + "px Georgia, serif"; return _mctx.measureText(t).width; }
+function declutter(items, bounds, passes) {
+  const GX = 7, GY = 4; // minimum gaps between label boxes
+  for (let p = 0; p < (passes || 64); p++) {
+    let moved = false;
+    for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+      const a = items[i], b = items[j], tot = a.weight + b.weight;
+      if (!tot) continue;
+      const dx = a.x - b.x, px = (a.w + b.w) / 2 + GX - Math.abs(dx);
+      if (px <= 0) continue;
+      const dy = a.y - b.y, py = (a.h + b.h) / 2 + GY - Math.abs(dy);
+      if (py <= 0) continue;
+      moved = true;
+      if (py <= px) { const s = py * (dy >= 0 ? 1 : -1); a.y += s * a.weight / tot; b.y -= s * b.weight / tot; }
+      else { const s = px * (dx >= 0 ? 1 : -1); a.x += s * a.weight / tot; b.x -= s * b.weight / tot; }
+    }
+    for (const it of items) {
+      if (!it.weight) continue;
+      it.x = Math.max(bounds.x0 + it.w / 2, Math.min(bounds.x1 - it.w / 2, it.x));
+      it.y = Math.max(bounds.y0 + it.h / 2, Math.min(bounds.y1 - it.h / 2, it.y));
+    }
+    if (!moved) break;
+  }
+}
+
 /* ===================================================== cluster meta + color */
 const CLUSTER_META = {
   c1_universal: { n: "Universal", v: 1 },
@@ -287,7 +316,7 @@ const ModeA = {
       const lab = el("div", "glabel col drag-handle");
       const inner = el("span", "lab-inner serif", w); lab.append(inner);
       lab.style.left = (leftG + j * cell + cell * 0.5) + "px";
-      lab.style.top = (topG - 6) + "px";
+      lab.style.top = (topG - 21) + "px"; // rotated box bottom must clear the first cell row
       lab.style.color = clusterVar(w, "d");
       this.attachReorder(lab, j);
       grid.append(lab);
@@ -467,29 +496,47 @@ const ModeB = {
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const sx = v => pad + (v - minX) / (maxX - minX || 1) * (W - 2 * pad);
     const sy = v => H - (pad + (v - minY) / (maxY - minY || 1) * (H - 2 * pad));
-    const XY = p => [sx(p[0]), sy(p[1])];
+
+    // estimate label boxes and push overlaps apart; the result and waypoint
+    // anchor the arithmetic so they stay put, alternatives move freely
+    const sizeFor = o => o.role === "result" ? 22 : o.role === "alt" ? 13 : o.role === "way" ? 11 : 17;
+    const boxes = pts.map(o => {
+      const fs = sizeFor(o);
+      return { o, x: sx(o.p[0]), y: sy(o.p[1]),
+               w: o.role === "way" ? 8 : textWidth(o.w, fs) + 26, h: fs + 10,
+               weight: o.role === "result" ? 0.1 : o.role === "way" ? 0 : o.role === "in" ? (o.w === a ? 0.3 : 0.7) : 1 };
+    });
+    const obstacles = [];
+    if (staticNote && staticNote.style.display !== "none") {
+      const nr = staticNote.getBoundingClientRect();
+      obstacles.push({ x: nr.left - rect.left + nr.width / 2, y: nr.top - rect.top + nr.height / 2, w: nr.width, h: nr.height, weight: 0 });
+    }
+    declutter([...boxes, ...obstacles], { x0: 6, y0: 8, x1: W - 6, y1: H - 8 });
+    boxes.forEach(bx => { bx.o.x = bx.x; bx.o.y = bx.y; });
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "pca-svg"); svg.style.position = "absolute"; svg.style.inset = "0"; svg.style.width = "100%"; svg.style.height = "100%"; svg.style.pointerEvents = "none";
     svg.innerHTML = `<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--ink-soft)"/></marker></defs>`;
     box.append(svg);
-    const find = w => pts.find(p => p.w === w).p;
-    const [pa, pamb, pd] = [find(a), find("(" + a + "−" + b + ")"), dPt];
-    this.arrow(svg, XY(pa), XY(pamb), "− " + b);
-    this.arrow(svg, XY(pamb), XY(pd), "+ " + c);
+    const find = w => pts.find(p => p.w === w);
+    const ia = find(a), iway = find("(" + a + "−" + b + ")");
+    this.arrow(svg, [ia.x, ia.y], [iway.x, iway.y], "− " + b);
+    this.arrow(svg, [iway.x, iway.y], [sx(dPt[0]), sy(dPt[1])], "+ " + c);
 
-    pts.forEach((o, idx) => {
-      const [x, y] = XY(o.p);
+    pts.forEach(o => {
       const node = el("div", "pca-node serif"); node.style.position = "absolute";
-      node.style.left = x + "px"; node.style.top = y + "px"; node.style.transform = "translate(-50%,-50%)";
-      node.style.transition = "opacity .5s, left .5s, top .5s"; node.style.padding = "1px 5px"; node.style.borderRadius = "6px";
+      node.style.left = o.x + "px"; node.style.top = o.y + "px"; node.style.transform = "translate(-50%,-50%)";
+      node.style.transition = "opacity .5s, left .5s, top .5s"; node.style.padding = "1px 5px"; node.style.borderRadius = "6px"; node.style.whiteSpace = "nowrap";
       if (o.role === "result") { node.style.fontSize = "22px"; node.style.fontWeight = "600"; node.style.color = $("#B-pca").dataset.bias === "1" ? "var(--c5-d)" : "var(--c1-d)"; node.style.background = "rgba(255,255,255,.7)"; node.textContent = o.w; }
       else if (o.role === "alt") { node.style.fontSize = "13px"; node.style.color = "var(--ink-faint)"; node.textContent = o.w; }
       else if (o.role === "way") { node.style.fontSize = "11px"; node.style.color = "var(--ink-faint)"; node.style.fontStyle = "italic"; node.textContent = ""; const dotw = el("span"); dotw.textContent = "•"; node.append(dotw); }
       else { node.style.fontSize = "17px"; node.style.color = clusterVar(o.w, "d"); node.textContent = o.w; }
-      // dot
-      const dot = el("span"); dot.style.cssText = `position:absolute;left:50%;top:-9px;transform:translateX(-50%);width:7px;height:7px;border-radius:50%;background:${o.role === "result" ? "var(--c1-d)" : o.role === "in" ? clusterVar(o.w, "d") : "var(--ink-faint)"}`;
-      if (o.role !== "way") node.append(dot);
+      // inline marker dot, sitting with the word instead of floating above it
+      if (o.role !== "way") {
+        const dot = el("span");
+        dot.style.cssText = `display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:${o.role === "result" ? 3 : 2}px;background:${o.role === "result" ? "var(--c1-d)" : o.role === "in" ? clusterVar(o.w, "d") : "var(--ink-faint)"}`;
+        node.prepend(dot);
+      }
       box.append(node);
       requestAnimationFrame(() => { node.style.opacity = "1"; });
       node.style.opacity = "0";
@@ -532,11 +579,16 @@ const GenderAxis = {
       <text x="${padX}" y="${midY - 12}" font-family="Georgia" font-size="14" fill="var(--c3-d)">← she</text>
       <text x="${W - padX}" y="${midY - 12}" text-anchor="end" font-family="Georgia" font-size="14" fill="var(--c2-d)">he →</text>`;
     box.append(svg);
-    scored.forEach((s, i) => {
+    // label positions: stagger, then declutter so same-level neighbors can't collide
+    const labs = scored.map((s, i) => {
       const x = X(s[1]); const up = i % 2 === 0; const y = midY + (up ? -1 : 1) * (24 + (i % 6) * 16);
-      const dot = document.createElementNS(svg.namespaceURI, "circle"); dot.setAttribute("cx", x); dot.setAttribute("cy", midY); dot.setAttribute("r", 4); dot.setAttribute("fill", clusterVar(s[0], "d")); svg.append(dot);
-      const ln = document.createElementNS(svg.namespaceURI, "line"); ln.setAttribute("x1", x); ln.setAttribute("y1", midY); ln.setAttribute("x2", x); ln.setAttribute("y2", y); ln.setAttribute("stroke", "var(--line-strong)"); svg.append(ln);
-      const t = document.createElementNS(svg.namespaceURI, "text"); t.setAttribute("x", x); t.setAttribute("y", y + (up ? -4 : 12)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-family", "Georgia"); t.setAttribute("font-size", "13"); t.setAttribute("fill", clusterVar(s[0], "d")); t.textContent = s[0]; svg.append(t);
+      return { word: s[0], dotX: x, up, x, y, w: textWidth(s[0], 13) + 10, h: 16, weight: 1 };
+    });
+    declutter(labs, { x0: 10, y0: 26, x1: W - 10, y1: H - 44 });
+    labs.forEach(l => {
+      const dot = document.createElementNS(svg.namespaceURI, "circle"); dot.setAttribute("cx", l.dotX); dot.setAttribute("cy", midY); dot.setAttribute("r", 4); dot.setAttribute("fill", clusterVar(l.word, "d")); svg.append(dot);
+      const ln = document.createElementNS(svg.namespaceURI, "line"); ln.setAttribute("x1", l.dotX); ln.setAttribute("y1", midY); ln.setAttribute("x2", l.x); ln.setAttribute("y2", l.y + (l.up ? 8 : -8)); ln.setAttribute("stroke", "var(--line-strong)"); svg.append(ln);
+      const t = document.createElementNS(svg.namespaceURI, "text"); t.setAttribute("x", l.x); t.setAttribute("y", l.y + 4); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-family", "Georgia"); t.setAttribute("font-size", "13"); t.setAttribute("fill", clusterVar(l.word, "d")); t.textContent = l.word; svg.append(t);
     });
     const cap = el("div", "gx pca-note"); cap.style.maxWidth = "70%"; cap.innerHTML = "Each occupation projected onto the <b>he − she</b> direction. The systematic left/right skew is the learned association — descriptive of the training text, not a judgment.";
     box.append(cap);
@@ -592,10 +644,20 @@ const ModeC = {
       const R = Rin + t * (Rout - Rin);
       return { w, s, ang, R };
     });
-    // light angular declutter
+    // light angular declutter (with wraparound between last and first)
     out.sort((a, b) => a.ang - b.ang);
-    for (let i = 1; i < out.length; i++) { const min = 0.32; if (out[i].ang - out[i - 1].ang < min) out[i].ang = out[i - 1].ang + min; }
+    const minAng = 0.32;
+    for (let i = 1; i < out.length; i++) { if (out[i].ang - out[i - 1].ang < minAng) out[i].ang = out[i - 1].ang + minAng; }
+    if (out.length > 1 && (out[0].ang + 2 * Math.PI) - out[out.length - 1].ang < minAng) out[out.length - 1].ang = out[0].ang + 2 * Math.PI - minAng;
     out.forEach(o => { o.x = cx + Math.cos(o.ang) * o.R; o.y = cy + Math.sin(o.ang) * o.R; });
+    // box-level declutter: neighbors move, the center word is pinned
+    const boxes = out.map(o => {
+      const fs = 13 + o.s * 9;
+      return { o, x: o.x, y: o.y, w: textWidth(o.w, fs) + textWidth(" 0.00", 10) + 18, h: fs + 10, weight: 1 };
+    });
+    const centerBox = { x: cx, y: cy, w: textWidth(this.center, 30) + 34, h: 48, weight: 0 };
+    declutter([...boxes, centerBox], { x0: 6, y0: 6, x1: W - 6, y1: H - 6 });
+    boxes.forEach(bx => { bx.o.x = bx.x; bx.o.y = bx.y; });
     return { cx, cy, out };
   },
   render(animate) {
