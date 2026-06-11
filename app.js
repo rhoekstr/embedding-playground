@@ -877,6 +877,8 @@ const Tray = {
 /* ===================================================== Mode D: which meaning wins */
 const ModeD = {
   current: null,
+  context: [],   // extra corpus words averaged into the center vector
+  _scale: null,  // per-scenario radius scale, frozen on the base word
   init() {
     const g = $("#D-scenarios");
     g.append(el("div", "scn-label", "ONE WORD, MANY SENSES"));
@@ -887,20 +889,40 @@ const ModeD = {
       b.addEventListener("click", () => this.load(s, true));
       g.append(b);
     });
+    const inp = $("#D-context");
+    inp.addEventListener("change", () => {
+      const w = inp.value.trim().toLowerCase();
+      inp.value = "";
+      if (!this.current || INDEX[w] == null) return;                 // corpus words only
+      if (w === this.current.word || this.context.includes(w)) return;
+      if (this.context.length >= 3) return;                          // keep it readable
+      this.context.push(w);
+      this.render(false, true);
+    });
     window.addEventListener("resize", () => {
       if ($('.mode[data-mode="D"]').classList.contains("active") && this.current) this.render(false);
     });
   },
   onShow() { if (this.current) this.render(false); else this.load(DATA.senses[0], true); },
-  load(s, animate) { this.current = s; this.render(animate); },
+  load(s, animate) { this.current = s; this.context = []; this._scale = null; this.render(animate); },
 
-  render(animate) {
+  // composite center vector: the word plus any added context, normalized
+  centerVec() {
+    const s = this.current;
+    if (!this.context.length) return vec(s.word);
+    const v = new Float32Array(DIM);
+    [s.word, ...this.context].forEach(w => { const u = vec(w); for (let i = 0; i < DIM; i++) v[i] += u[i]; });
+    let n = 0; for (let i = 0; i < DIM; i++) n += v[i] * v[i];
+    n = Math.sqrt(n) || 1; for (let i = 0; i < DIM; i++) v[i] /= n;
+    return v;
+  },
+
+  render(animate, glide) {
     const s = this.current, stage = $("#D-stage");
-    stage.querySelectorAll(".d-node,.d-endlab,svg.d-svg").forEach(n => n.remove());
     const W = stage.clientWidth, H = stage.clientHeight;
     if (W < 60 || H < 60) return;
-    const wv = vec(s.word);
     const cx = W / 2, cy = H * 0.52;
+    const wv = this.centerVec();
 
     // per-sense mean cosine and share of the total pull
     const senses = s.senses.map(sd => ({
@@ -909,12 +931,23 @@ const ModeD = {
     }));
     const total = senses.reduce((t, x) => t + x.mean, 0) || 1;
 
-    // one global radius map: higher cosine = closer to the word (Mode C's rule)
-    const allCos = [];
-    senses.forEach(sd => sd.anchors.forEach(a => allCos.push(dot(wv, vec(a)))));
-    const hi = Math.max(...allCos), lo = Math.min(...allCos, 0);
+    // radius map frozen on the base word, so adding context reads as absolute
+    // motion: higher cosine = closer to the center (Mode C's rule)
+    if (!this._scale) {
+      const base = vec(s.word), cs = [];
+      s.senses.forEach(sd => sd.anchors.forEach(a => cs.push(dot(base, vec(a)))));
+      this._scale = { hi: Math.max(...cs), lo: Math.min(...cs, 0) };
+    }
+    const { hi, lo } = this._scale;
     const rMin = 78, rMax = Math.min(cx, cy) - 86;
-    const R = c => rMin + (hi - c) / (hi - lo || 1) * (rMax - rMin);
+    const R = c => Math.max(54, Math.min(rMax, rMin + (hi - c) / (hi - lo || 1) * (rMax - rMin)));
+
+    if (glide && this._refs && stage.contains(this._refs.wordEl)) {
+      this.glide(senses, total, R, cx, cy, wv);
+      return;
+    }
+    stage.querySelectorAll(".d-node,.d-endlab,svg.d-svg").forEach(n => n.remove());
+    this._refs = { spokes: [], anchors: [], labels: [], wordEl: null };
 
     const N = senses.length;
     const angles = N === 2 ? [180, 0] : senses.map((_, k) => -90 + k * 360 / N);
@@ -944,6 +977,7 @@ const ModeD = {
       spoke.setAttribute("stroke", "var(--line-strong)"); spoke.setAttribute("stroke-width", "1.5");
       spoke.setAttribute("stroke-dasharray", "2 3");
       svg.append(spoke);
+      this._refs.spokes.push(spoke);
       if (animate) {
         spoke.style.opacity = "0"; spoke.style.transition = "opacity .4s";
         setTimeout(() => { spoke.style.opacity = "1"; }, 350 + k * 140);
@@ -959,10 +993,11 @@ const ModeD = {
         const node = el("div", "d-node d-anchor", a);
         node.style.color = clusterVar(a, "d");
         node.title = `cosine(${s.word}, ${a}) = ${c.toFixed(2)}`;
+        node.style.transition = "opacity .4s, left .8s cubic-bezier(.3,.1,.3,1), top .8s cubic-bezier(.3,.1,.3,1)";
         stage.append(node);
+        this._refs.anchors.push({ node, a, k });
         if (animate) {
           node.style.left = cx + "px"; node.style.top = cy + "px"; node.style.opacity = "0";
-          node.style.transition = "opacity .4s, left .7s cubic-bezier(.3,.1,.3,1), top .7s cubic-bezier(.3,.1,.3,1)";
           setTimeout(() => { node.style.opacity = "1"; node.style.left = x + "px"; node.style.top = y + "px"; }, 650 + k * 140 + i * 70);
         } else {
           node.style.left = x + "px"; node.style.top = y + "px";
@@ -977,15 +1012,69 @@ const ModeD = {
       const lx = Math.max(80, Math.min(W - 80, cx + ux * rl));
       const ly = Math.max(14, Math.min(H - 44, cy + uy * rl - 14));
       lab.style.left = lx + "px"; lab.style.top = ly + "px"; lab.style.maxWidth = "150px";
+      lab.style.transition = "left .8s ease, top .8s ease";
       stage.append(lab);
+      this._refs.labels.push(lab);
       appear(lab, 1500 + k * 110);
     });
 
     // the word: one vector, one point, center of everything
-    const word = el("div", "d-node d-word serif", s.word);
+    const word = el("div", "d-node d-word serif");
     word.style.left = cx + "px"; word.style.top = cy + "px";
     stage.append(word);
+    this._refs.wordEl = word;
+    this.drawCenter();
     appear(word, 60);
+  },
+
+  // rebuild the center column: the word plus removable context chips
+  drawCenter() {
+    const word = this._refs.wordEl;
+    word.textContent = this.current.word;
+    if (this.context.length) {
+      const row = el("div", "d-ctx-row");
+      this.context.forEach(c => {
+        const chip = el("span", "d-ctx-chip", `+ ${c}`);
+        chip.title = "click to remove";
+        chip.addEventListener("click", () => {
+          this.context = this.context.filter(x => x !== c);
+          this.render(false, true);
+        });
+        row.append(chip);
+      });
+      word.append(row);
+    }
+  },
+
+  // context changed: same scaffolding, new distances — everything glides
+  glide(senses, total, R, cx, cy, wv) {
+    const stage = $("#D-stage"), W = stage.clientWidth, H = stage.clientHeight;
+    const rMax = Math.min(cx, cy) - 86;
+    const N = senses.length;
+    const angles = N === 2 ? [180, 0] : senses.map((_, k) => -90 + k * 360 / N);
+    const rad = a => a * Math.PI / 180;
+    senses.forEach((sd, k) => {
+      const A = rad(angles[k]), ux = Math.cos(A), uy = Math.sin(A);
+      const rm = R(sd.mean);
+      const spoke = this._refs.spokes[k];
+      spoke.setAttribute("x2", cx + ux * rm); spoke.setAttribute("y2", cy + uy * rm);
+      const n = sd.anchors.length;
+      const fan = N === 2 ? 56 : Math.min(46, 300 / N);
+      sd.anchors.forEach((a, i) => {
+        const c = dot(wv, vec(a));
+        const aa = rad(angles[k] + (n > 1 ? (i - (n - 1) / 2) * (fan / (n - 1)) : 0));
+        const ref = this._refs.anchors.find(o => o.a === a && o.k === k);
+        ref.node.style.left = (cx + Math.cos(aa) * R(c)) + "px";
+        ref.node.style.top = (cy + Math.sin(aa) * R(c)) + "px";
+        ref.node.title = `cosine(${this.context.length ? "center" : this.current.word}, ${a}) = ${c.toFixed(2)}`;
+      });
+      const rl = Math.min(rMax + 48, Math.max(...sd.anchors.map(a => R(dot(wv, vec(a))))) + 46);
+      const lab = this._refs.labels[k];
+      lab.style.left = Math.max(80, Math.min(W - 80, cx + ux * rl)) + "px";
+      lab.style.top = Math.max(14, Math.min(H - 44, cy + uy * rl - 14)) + "px";
+      lab.querySelector(".mean").textContent = `mean ${sd.mean.toFixed(2)} · ${Math.round(sd.mean / total * 100)}% of the pull`;
+    });
+    this.drawCenter();
   },
 };
 

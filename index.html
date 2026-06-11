@@ -271,6 +271,9 @@ footer.chrome b{color:var(--ink-soft);font-weight:600}
 .d-anchor{font-size:14.5px;padding:1px 6px;border-radius:6px;cursor:default}
 .d-word{font-size:26px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.75);padding:2px 10px;border-radius:8px;box-shadow:var(--shadow)}
 .d-endlab{position:absolute;font-family:var(--sans);font-size:13px;color:var(--ink-soft);text-align:center;transform:translateX(-50%)}
+.d-ctx-row{display:flex;gap:5px;justify-content:center;margin-top:5px;flex-wrap:wrap}
+.d-ctx-chip{font-family:var(--sans);font-size:11px;font-weight:400;color:var(--ink-soft);border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:0 7px;cursor:pointer;white-space:nowrap}
+.d-ctx-chip:hover{color:var(--c6-d);border-color:var(--ink-faint)}
 .d-endlab b{display:block;font-size:14.5px;color:var(--ink)}
 .d-endlab .mean{font-variant-numeric:tabular-nums;color:var(--ink-faint);font-size:12px}
 .C-stage{position:relative;border:1px solid var(--line);border-radius:12px;background:radial-gradient(circle at 50% 50%,#fcfaf4,#f3ecdf);overflow:hidden;min-width:0}
@@ -430,6 +433,11 @@ svg.links line{stroke:var(--line-strong);stroke-width:1;transition:.6s}
       <div class="D-wrap">
         <div class="D-rail">
           <div class="scn-group" id="D-scenarios"></div>
+          <div class="palette">
+            <div class="scn-label" style="margin-top:0">Add context — shift the meaning</div>
+            <input class="pal-search" id="D-context" placeholder="add a corpus word…" list="C-datalist" />
+            <div class="muted tiny" style="margin-top:8px">Averaging another word into the center vector is a hand-made version of what contextual models do automatically. Try <em>bank + river</em>, <em>court + wedding</em>, <em>measure + amendment</em>.</div>
+          </div>
           <div class="muted tiny" style="padding:0 2px">Each word here has two, three, even four unrelated senses — but only <em>one</em> vector. The sense cluster that sits closest is the one the training text fed most; a sense parked far away barely exists to the model.</div>
         </div>
         <div class="D-stage" id="D-stage">
